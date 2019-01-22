@@ -1,0 +1,23 @@
+<ConfigStart>
+
+    <Registers type="integer" num="8"> 
+            3 4 6 21 
+            3 4 9 0
+    </Registers>
+
+    <ReservationGroup entries="3">
+        <operation type="add" latency="2"/>
+        <operation type="sub" latency="4"/>
+    </ReservationGroup>
+
+    <Registers type="float" num="8"> 
+            1.32 -0.68 5.86 -9.9 
+            2.14 2.14  2.14 2.14
+    </Registers>
+
+    <ReservationGroup entries="2">
+        <operation type="mul" latency="10"/>
+        <operation type="div" latency="40"/>
+    </ReservationGroup>
+
+</ConfigStart>
