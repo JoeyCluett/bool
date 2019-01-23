@@ -5,12 +5,43 @@
 #include <vector>
 #include <stdexcept>
 
-struct logic_element {
+// tired of all the stupid zero/nonzero rules of bools
+typedef int bool_t;
 
-    static std::vector<logic_element*> this_vector;
+struct logic_element_t {
+
+    static std::vector<logic_element_t*> this_vector;
+
+    // maintains a single boolean value across function calls
+    struct input_port {
+        logic_element_t* src = NULL;
+        bool_t value = 0;
+
+        static std::vector<input_port*> this_vector;
+
+        input_port(void) { this_vector.push_back(this); }
+        
+        static void fetch(void) {
+            for(input_port* ip : this_vector) {
+                if(ip != NULL)
+                    ip->value = (ip->src->output_value ? 1 : 0);
+            }
+        }
+    };
+
+    // constructor always adds *this to vector for 
+    // simulation purposes
+    logic_element_t(void) { this_vector.push_back(this); }
+
+    static void global_eval(void) {
+        for(auto* le : this_vector)
+            le->evaluate();
+    }
+
+    static void global_fetch(void) { input_port::fetch(); }
 
     static void simulate_single_delay(void) {
-        for(auto* le : this_vector) le->fetch_inputs();
+        global_fetch();
         for(auto* le : this_vector) le->evaluate();
     }
 
@@ -21,25 +52,13 @@ struct logic_element {
         }
     }
 
-    static void global_eval(void) {
-        for(auto* le : this_vector)
-            le->evaluate();
-    }
+    // used by EVERY logic gate
+    bool_t output_value;
 
-    bool output_value;
-    bool get_output(void) {
-        return output_value;
-    }
-
-    static int to_true_bool(int i) {
+    // strictly speaking, bools are zero and non-zero
+    static bool_t to_true_bool(bool_t i) {
         // bools sometimes lie
         return i ? 1 : 0;
-    }
-
-    // constructor always adds *this to vector for 
-    // simulation purposes
-    logic_element(void) {
-        this_vector.push_back(this);
     }
 
     // each logic element internally evaluates its own 
@@ -47,11 +66,7 @@ struct logic_element {
     // also where the magic of simulation happens
     // returns true if state of gate changed. this allows 
     //the simulator to find a steady state automatically
-    virtual bool evaluate(void) = 0;
-    
-    // all logic elements need to fetch their respective 
-    // inputs BEFORE evaluating
-    virtual void fetch_inputs(void) = 0;
+    virtual bool_t evaluate(void) = 0;
 
     // optionally define a print function for the logic 
     // element. this should display inputs and outputs
@@ -59,209 +74,65 @@ struct logic_element {
 
 };
 
-std::vector<logic_element*> logic_element::this_vector;
+std::vector<logic_element_t*> logic_element_t::this_vector;
+std::vector<logic_element_t::input_port*> logic_element_t::input_port::this_vector;
 
-struct and_t : public logic_element {
-    logic_element* inputs[2] = {NULL, NULL};
-    bool input_values[2];
+typedef logic_element_t::input_port input_port_t;
 
-    void fetch_inputs(void) override {
-        for(int i : {0, 1}) {
-            if(inputs[i] != NULL)
-                input_values[i] = to_true_bool(inputs[i]->get_output());
-        }
+struct LOGICAL_CONSTANT : public logic_element_t {
+    LOGICAL_CONSTANT(bool_t v = false) {
+        output_value = v;
     }
 
-    bool evaluate(void) override {
-        //std::cout << "input a : " << input_values[0] << ", input b : " << input_values[1];
-        bool tmp = input_values[0] && input_values[1];
-        //std::cout << ", output: " << tmp << std::endl;
-
-        if(tmp != output_value) {
-            // changed
-            output_value = tmp;
-            return true;
-        }
+    bool_t evaluate(void) override {
         return false;
     }
 
-    void print(void) override {
-        std::cout << "AND gate:\n"
-            << "  inputs: " << input_values[0] << input_values[1]
-            << "  output: " << output_value
-            << std::endl;
-    }
 };
 
-struct or_t : public logic_element {
-    logic_element* inputs[2] = {NULL, NULL};
-    bool input_values[2] = {false, false};
+// used as global constants
+LOGICAL_CONSTANT logic_high_t(1);
+LOGICAL_CONSTANT logic_low_t(0);
 
-    void fetch_inputs(void) override {
-        for(int i : {0, 1}) {
-            if(inputs[i] != NULL)
-                input_values[i] = to_true_bool(inputs[i]->get_output());
-        }
-    }
+struct AND_t : public logic_element_t {
 
-    bool evaluate(void) override {
-        bool tmp = input_values[0] || input_values[1];
+    input_port_t A, B;
+
+    bool_t evaluate(void) override {
+        bool_t tmp = A.value & B.value;
         if(tmp != output_value) {
             output_value = tmp;
-            return true;
+            return 1;
         }
-        return false;
-    }
-
-    void print(void) override {
-        std::cout << "OR gate:\n"
-            << "  inputs: " << input_values[0] << input_values[1]
-            << "  output: " << output_value
-            << std::endl;
+        return 0;
     }
 };
 
-struct not_t : public logic_element {
-    logic_element* input = NULL;
-    bool input_value = false;
+struct OR_t : public logic_element_t {
 
-    void fetch_inputs(void) override {
-        if(input != NULL)
-            input_value = to_true_bool(input->output_value);
-    }
+    input_port_t A, B;
 
-    bool evaluate(void) override {
-        bool tmp  = input_value ? false : true;
+    bool_t evaluate(void) override {
+        bool_t tmp = A.value | B.value;
         if(tmp != output_value) {
             output_value = tmp;
-            return true;
+            return 1;
         }
-        else {
-            output_value = tmp;
-            return false;
-        }
+        return 0;
     }
-
-    void print(void) override {
-        std::cout << "NOT gate: \n"
-            << "  input: " << input_value
-            << "  output: " << output_value
-            << std::endl;
-    }
-
 };
 
-struct xor_t : public logic_element {
-    logic_element* inputs[2] = {NULL, NULL};
-    bool input_values[2] = {false, false};
+struct XOR_t : public logic_element_t {
 
-    void fetch_inputs(void) override {
-        for(int i : {0, 1}) {
-            if(inputs[i] != NULL)
-                input_values[i] = to_true_bool(inputs[i]->get_output());
-        }
-    }
+    input_port_t A, B;
 
-    bool evaluate(void) override {
-        bool tmp = (input_values[0] ^ input_values[1]);
+    bool_t evaluate(void) override {
+        bool_t tmp = A.value ^ B.value;
         if(tmp != output_value) {
             output_value = tmp;
-            return true;
+            return 1;
         }
-        else {
-            output_value = tmp;
-            return false;
-        }
+        return 0;
     }
-
-    void print(void) override {
-        std::cout << "XOR gate:\n"
-            << "  inputs: " << input_values[0] << input_values[1]
-            << "  output: " << output_value
-            << std::endl;
-    }
-
 };
 
-struct xnor_t : public logic_element {
-    logic_element* inputs[2] = {NULL, NULL};
-    bool input_values[2] = {false, false};
-
-    void fetch_inputs(void) override {
-        for(int i : {0, 1}) {
-            if(inputs[i] != NULL)
-                input_values[i] = to_true_bool(inputs[i]->get_output());
-        }
-    }
-
-    bool evaluate(void) override {
-        bool tmp = (input_values[0] == input_values[1]);
-        if(tmp != output_value) {
-            output_value = tmp;
-            return true;
-        }
-        else {
-            output_value = tmp;
-            return false;
-        }
-    }
-
-    void print(void) override {
-        std::cout << "XOR gate:\n"
-            << "  inputs: " << input_values[0] << input_values[1]
-            << "  output: " << output_value
-            << std::endl;
-    }
-
-};
-
-struct logic_constant_t : public logic_element {
-
-    logic_constant_t(bool b = false) {
-        output_value = b;
-    }
-
-    bool evaluate(void) override {
-        // its a constant, nothing ever happens
-        return false;
-    }
-
-    void fetch_inputs(void) override {
-        return;
-    }
-
-    void print(void) override {
-        std::cout << "Constant:\n"
-            << "  value: " << output_value
-            << std::endl;
-    }
-
-};
-
-struct logic_buffer_t : public logic_element {
-    logic_element* input = NULL;
-    bool input_value = false;
-
-    void fetch_inputs(void) override {
-        if(input != NULL)
-            input_value = to_true_bool(input->output_value);
-    }
-
-    bool evaluate(void) override {
-        if(input_value != output_value) {
-            output_value = input_value;
-            return true;
-        }
-        return false;
-    }
-
-    void print(void) override {
-        std::cout << "Buffer:\n"
-                << "  value: " << output_value
-                << std::endl;
-    }
-
-};
-
-logic_constant_t logic_high(true);
-logic_constant_t logic_low(false);

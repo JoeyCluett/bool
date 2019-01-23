@@ -2,115 +2,106 @@
 
 #include <standard_gates.h>
 
-struct half_adder_t : public logic_element {
-    xor_t sum;
-    and_t carry;
+struct HalfAdder : public logic_element_t {
+    XOR_t sum;
+    AND_t carry;
 
-    // A, B
-    logic_element* inputs[2];
-    bool input_values[2] = {false, false};    
-
-    logic_element* get_sum(void) {
-        return &sum;
+    void set_A(logic_element_t* a_input) {
+        sum.A.src   = a_input;
+        carry.A.src = a_input;
     }
 
-    logic_element* get_carry(void) {
-        return &carry;
+    void set_B(logic_element_t* b_input) {
+        sum.B.src   = b_input;
+        carry.B.src = b_input;
     }
 
-    void set_a_input(logic_element* element) {
-        sum.inputs[0]   = element;
-        carry.inputs[0] = element;
-        inputs[0] = element;
-    }
-
-    void set_b_input(logic_element* element) {
-        sum.inputs[1]   = element;
-        carry.inputs[1] = element;
-        inputs[1] = element;
-    }
-
-    // the inputs are set during construction. we only
-    // fetch local copies for this module
-    void fetch_inputs(void) override {
-        for(int i : {0, 1}) {
-            if(inputs[i] != NULL)
-                input_values[i] = inputs[i]->output_value;
-        }
-    }
-
-    bool evaluate(void) override { return false; }
-
-    void print(void) override {
-        std::cout << "Half adder:\n"
-                << "  A: " << input_values[0] 
-                << "  B: " << input_values[1] 
-                << std::endl
-                << "Output:\n  Sum: "
-                << sum.output_value
-                << "  Carry: "
-                << carry.output_value
-                << std::endl;
-    }
-
-};
-
-struct full_adder_t : public logic_element {
-
-    half_adder_t upper_adder;
-    half_adder_t lower_adder;
-    or_t         carry_out;
-
-    // Ci, A, B
-    logic_element* inputs[3];
-    bool input_values[3] = {false, false, false};
-
-    full_adder_t(void) {
-        // internal logic flow
-        upper_adder.set_b_input(lower_adder.get_sum());
-        carry_out.inputs[0] = upper_adder.get_carry();
-        carry_out.inputs[1] = lower_adder.get_carry();
-    }
-
-    logic_element* get_sum(void) { return upper_adder.get_sum(); }
-    logic_element* get_carry(void) { return lower_adder.get_carry(); }
-
-    void set_carry_in(logic_element* ci) {
-        inputs[0] = ci;
-        upper_adder.set_a_input(ci);
-    }
-
-    void set_a_input(logic_element* a) {
-        inputs[1] = a;
-        lower_adder.set_a_input(a);
-    }
-
-    void set_b_input(logic_element* b) {
-        inputs[2] = b;
-        lower_adder.set_b_input(b);
-    }
-
-    void fetch_inputs(void) override {
-        // save inputs for our own use
-        for(int i : {0, 1, 2}) {
-            input_values[i] = inputs[i]->output_value;
-        }
-    }
-
-    // handled on the individual gate level
-    bool evaluate(void) override {
+    bool_t evaluate(void) override {
+        // nothing more needs to be done here
         return false;
     }
 
-    void print(void) {
-        std::cout << "Full adder:\n"
-                << "  Ci: " << input_values[0]
-                << "  A: " << input_values[1]
-                << "  B: " << input_values[2]
-                << "\nOutput:\n"
-                << "  Sum: " << upper_adder.get_sum()->output_value
-                << "  Co: " << lower_adder.get_carry()->output_value
-                << std::endl;
+    logic_element_t* get_sum(void) {
+        return &sum;
+    }
+
+    logic_element_t* get_carry(void) {
+        return &carry;
     }
 
 };
+
+struct FullAdder : public logic_element_t {
+
+    HalfAdder upper_adder;
+    HalfAdder lower_adder;
+    OR_t      carry;
+
+    bool_t evaluate(void) override { return false; }
+
+    FullAdder(void) {
+        upper_adder.set_B(lower_adder.get_sum());
+        carry.A.src = lower_adder.get_carry();
+        carry.B.src = upper_adder.get_carry();
+    }
+
+    logic_element_t* get_Co(void) { return &carry; }
+
+    logic_element_t* get_sum(void) { return upper_adder.get_sum(); }
+
+    void set_A(logic_element_t* a) { lower_adder.set_A(a); }
+
+    void set_B(logic_element_t* b) { lower_adder.set_B(b); }
+
+    void set_Ci(logic_element_t* c) { upper_adder.set_A(c); }
+
+    void print(void) override {
+        std::cout
+            << upper_adder.sum.A.value
+            << " "
+            << lower_adder.sum.A.value
+            << lower_adder.sum.B.value
+            << " -> "
+            << upper_adder.sum.output_value
+            << carry.output_value << std::endl;
+    }
+};
+
+struct FourBitAdder : public logic_element_t {
+
+    FullAdder bits[4];
+
+    FourBitAdder(void) {
+        // connect all of the ripple-carry logic needed
+        for(int i : {1, 2, 3})
+            bits[i].set_Ci(bits[i-1].get_Co());
+    }
+
+    bool_t evaluate(void) override { return false; }
+
+    void set_Ci(logic_element_t* ci) {
+        bits[0].set_Ci(ci);
+    }
+
+    void set_A(
+            logic_element_t* a0, logic_element_t* a1, 
+            logic_element_t* a2, logic_element_t* a3) {
+        bits[0].set_A(a0);
+        bits[1].set_A(a1);
+        bits[2].set_A(a2);
+        bits[3].set_A(a3);
+    }
+
+    void set_B(
+            logic_element_t* b0, logic_element_t* b1, 
+            logic_element_t* b2, logic_element_t* b3) {
+        bits[0].set_B(b0);
+        bits[1].set_B(b1);
+        bits[2].set_B(b2);
+        bits[3].set_B(b3);
+    }
+
+    
+
+};
+

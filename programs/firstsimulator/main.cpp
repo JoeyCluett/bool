@@ -10,41 +10,26 @@ int main(int argc, char* argv[]) {
 
     int current_value = 0;
 
-    logic_constant_t w, x, y, z;
+    FullAdder ha;
 
-    or_t or_1, or_2;
-    and_t and_1;
+    LOGICAL_CONSTANT lca, lcb, lcc;
 
-    and_1.inputs[0] = &or_1;
-    and_1.inputs[1] = &or_2;
-
-    or_1.inputs[0] = &w;
-    or_1.inputs[1] = &x;
-    or_2.inputs[0] = &y;
-    or_2.inputs[1] = &z;
+    ha.set_A(&lca);
+    ha.set_B(&lcb);
+    ha.set_Ci(&lcc);
 
     while(1) {
         getchar();
         current_value++;
 
-        w.output_value = current_value & (1 << 0);
-        x.output_value = current_value & (1 << 1);
-        y.output_value = current_value & (1 << 2);
-        z.output_value = current_value & (1 << 3);
+        // change the constants
+        lca = current_value & 0x01;
+        lcb = current_value & 0x02;
+        lcc = current_value & 0x04;
 
-        //logic_element::simulate_single_delay();
-        logic_element::simulate_to_steady();
+        logic_element_t::simulate_to_steady();
 
-        cout << or_1.input_values[0] << or_1.input_values[1]
-            << "  " << or_2.input_values[0] << or_2.input_values[1]
-            << "  -> " << and_1.output_value << endl;
-        cout << ' ' << and_1.input_values[0] << "   " << and_1.input_values[1]
-            << endl;
-
-        //cout << input_a.output_value << input_b.output_value << carry_in.output_value 
-        //        << "  " << and_gate.output_value << endl;
-
-        //adder.print();
+        ha.print();
     }
 
     return 0;
