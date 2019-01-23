@@ -1,8 +1,9 @@
 #pragma once
 
 #include <standard_gates.h>
+#include <array>
 
-struct HalfAdder : public logic_element_t {
+struct HalfAdder {
     XOR_t sum;
     AND_t carry;
 
@@ -16,28 +17,21 @@ struct HalfAdder : public logic_element_t {
         carry.B.src = b_input;
     }
 
-    bool_t evaluate(void) override {
-        // nothing more needs to be done here
-        return false;
-    }
+    logic_element_t* get_sum(void) { return &sum; }
+    logic_element_t* get_carry(void) { return &carry; }
 
-    logic_element_t* get_sum(void) {
-        return &sum;
-    }
-
-    logic_element_t* get_carry(void) {
-        return &carry;
-    }
+    bool_t get_sum_value(void) { return sum.output_value; }
+    bool_t get_carry_value(void) { return carry.output_value; }
+    bool_t get_A_input_value(void) { return sum.A.value; }
+    bool_t get_B_input_value(void) { return sum.B.value; }
 
 };
 
-struct FullAdder : public logic_element_t {
+struct FullAdder {
 
     HalfAdder upper_adder;
     HalfAdder lower_adder;
     OR_t      carry;
-
-    bool_t evaluate(void) override { return false; }
 
     FullAdder(void) {
         upper_adder.set_B(lower_adder.get_sum());
@@ -45,29 +39,35 @@ struct FullAdder : public logic_element_t {
         carry.B.src = upper_adder.get_carry();
     }
 
+    // logical output gates
     logic_element_t* get_Co(void) { return &carry; }
-
     logic_element_t* get_sum(void) { return upper_adder.get_sum(); }
 
+    // set inputs
     void set_A(logic_element_t* a) { lower_adder.set_A(a); }
-
     void set_B(logic_element_t* b) { lower_adder.set_B(b); }
-
     void set_Ci(logic_element_t* c) { upper_adder.set_A(c); }
 
-    void print(void) override {
+    // retrieve output values
+    bool_t get_A_input_value(void) { return lower_adder.get_A_input_value(); }
+    bool_t get_B_input_value(void) { return lower_adder.get_B_input_value(); }
+    bool_t get_Co_value(void) { return carry.output_value; }
+    bool_t get_Ci_value(void) { return upper_adder.get_A_input_value(); }
+    bool_t get_sum_value(void) { return upper_adder.get_sum_value(); }
+
+    void print(void) {
         std::cout
-            << upper_adder.sum.A.value
+            << get_Ci_value()
             << " "
-            << lower_adder.sum.A.value
-            << lower_adder.sum.B.value
+            << get_A_input_value()
+            << get_B_input_value()
             << " -> "
-            << upper_adder.sum.output_value
-            << carry.output_value << std::endl;
+            << get_sum_value()
+            << get_Co_value() << std::endl;
     }
 };
 
-struct FourBitAdder : public logic_element_t {
+struct FourBitAdder {
 
     FullAdder bits[4];
 
@@ -77,31 +77,41 @@ struct FourBitAdder : public logic_element_t {
             bits[i].set_Ci(bits[i-1].get_Co());
     }
 
-    bool_t evaluate(void) override { return false; }
-
     void set_Ci(logic_element_t* ci) {
         bits[0].set_Ci(ci);
     }
 
-    void set_A(
-            logic_element_t* a0, logic_element_t* a1, 
-            logic_element_t* a2, logic_element_t* a3) {
-        bits[0].set_A(a0);
-        bits[1].set_A(a1);
-        bits[2].set_A(a2);
-        bits[3].set_A(a3);
+    void set_A(std::array<logic_element_t*, 4> a) {
+        for(int i : {0, 1, 2, 3})
+            bits[i].set_A(a[i]);
     }
 
-    void set_B(
-            logic_element_t* b0, logic_element_t* b1, 
-            logic_element_t* b2, logic_element_t* b3) {
-        bits[0].set_B(b0);
-        bits[1].set_B(b1);
-        bits[2].set_B(b2);
-        bits[3].set_B(b3);
+    void set_B(std::array<logic_element_t*, 4> b) {
+        for(int i : {0, 1, 2, 3})
+            bits[i].set_B(b[i]);
     }
 
+    void print(void) {
+        std::cout << "  ";
+        for(int i : {3, 2, 1, 0})
+            std::cout << bits[i].lower_adder.sum.A.value;
+        std::cout << std::endl;
     
+        std::cout << "  ";
+        for(int i : {3, 2, 1, 0})
+            std::cout << bits[i].lower_adder.sum.B.value;
+        std::cout << std::endl;
+
+        std::cout << "     " << bits[0].upper_adder.sum.A.value << std::endl;
+        std::cout << "-------\n";
+
+        std::cout << bits[3].get_Co_value() << ' ';
+        for(int i : {3, 2, 1, 0})
+            std::cout << bits[i].upper_adder.get_sum_value();
+        std::cout << std::endl;
+
+
+    }
 
 };
 

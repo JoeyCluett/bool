@@ -22,10 +22,15 @@ struct logic_element_t {
         input_port(void) { this_vector.push_back(this); }
         
         static void fetch(void) {
+            //std::cout << "Fetching inputs...\n" << std::flush;
             for(input_port* ip : this_vector) {
+                //std::cout << (void*)ip << std::endl << std::flush;
                 if(ip != NULL)
                     ip->value = (ip->src->output_value ? 1 : 0);
+                else
+                    throw std::logic_error("input_port not connected");
             }
+            //std::cout << "DONE\n" << std::flush;
         }
     };
 
