@@ -11,6 +11,8 @@ typedef int bool_t;
 struct logic_element_t {
 
     static std::vector<logic_element_t*> this_vector;
+    static size_t total_gates; // not all gates are important
+    static size_t total(void) { return total_gates; }
 
     // maintains a single boolean value across function calls
     struct input_port {
@@ -22,21 +24,25 @@ struct logic_element_t {
         input_port(void) { this_vector.push_back(this); }
         
         static void fetch(void) {
-            //std::cout << "Fetching inputs...\n" << std::flush;
+            std::cout << "Fetching inputs...\n" << std::flush;
             for(input_port* ip : this_vector) {
-                //std::cout << (void*)ip << std::endl << std::flush;
+                std::cout << (void*)ip << std::endl << std::flush;
                 if(ip != NULL)
                     ip->value = (ip->src->output_value ? 1 : 0);
                 else
                     throw std::logic_error("input_port not connected");
             }
-            //std::cout << "DONE\n" << std::flush;
+            std::cout << "DONE\n" << std::flush;
         }
     };
 
     // constructor always adds *this to vector for 
     // simulation purposes
-    logic_element_t(void) { this_vector.push_back(this); }
+    logic_element_t(bool add_to_ct = false) { 
+        this_vector.push_back(this); 
+        if(add_to_ct)
+            total_gates++;
+    }
 
     static void global_eval(void) {
         for(auto* le : this_vector)
@@ -45,16 +51,26 @@ struct logic_element_t {
 
     static void global_fetch(void) { input_port::fetch(); }
 
-    static void simulate_single_delay(void) {
+    // returns true if unsteady, false otherwise
+    static bool_t simulate_single_delay(void) {
         global_fetch();
-        for(auto* le : this_vector) le->evaluate();
+        bool_t unsteady = 0;
+        for(auto* le : this_vector) {
+            if(le->evaluate())
+                unsteady = 1;
+        }
+        return unsteady;
     }
 
-    static void simulate_to_steady(void) {
-        int sz = this_vector.size();
-        for(int i = 0; i < sz; i++) {
-            simulate_single_delay();
+    // simulate to steady state, for single gate 
+    // delays, use above method
+    static int simulate_to_steady(void) {
+        int total_iters = 0;
+        while(simulate_single_delay()) {
+            //std::cout << '#';
+            total_iters++;
         }
+        return total_iters;
     }
 
     // used by EVERY logic gate
@@ -81,6 +97,7 @@ struct logic_element_t {
 
 std::vector<logic_element_t*> logic_element_t::this_vector;
 std::vector<logic_element_t::input_port*> logic_element_t::input_port::this_vector;
+size_t logic_element_t::total_gates = 0L;
 
 typedef logic_element_t::input_port input_port_t;
 
@@ -99,9 +116,28 @@ struct LOGICAL_CONSTANT : public logic_element_t {
 LOGICAL_CONSTANT logic_high_t(1);
 LOGICAL_CONSTANT logic_low_t(0);
 
-struct AND_t : public logic_element_t {
+auto* LOW  = &logic_low_t;
+auto* HIGH = &logic_high_t;
 
+struct NOT_t : public logic_element_t {
+    input_port_t Y;
+
+    NOT_t(void) : logic_element_t(true) { ; }
+
+    bool_t evaluate(void) override {
+        bool_t tmp = Y.value ? 0 : 1;
+        if(tmp != output_value) {
+            output_value = tmp;
+            return 1;
+        }
+        return 0;
+    }
+};
+
+struct AND_t : public logic_element_t {
     input_port_t A, B;
+    
+    AND_t(void) : logic_element_t(true) { ; }
 
     bool_t evaluate(void) override {
         bool_t tmp = A.value & B.value;
@@ -113,12 +149,79 @@ struct AND_t : public logic_element_t {
     }
 };
 
-struct OR_t : public logic_element_t {
+struct AND_3_t : public logic_element_t {
+    input_port_t inputs[3];
+    AND_3_t(void) : logic_element_t(true) { ; }
 
+    bool_t evaluate(void) override {
+        bool_t tmp = inputs[0].value & inputs[1].value & inputs[2].value;
+        if(tmp != output_value) {
+            output_value = tmp;
+            return 1;
+        }
+        return 0;
+    }
+};
+
+struct NAND_t : public logic_element_t {
     input_port_t A, B;
+
+    NAND_t(void) : logic_element_t(true) { ; }
+
+    bool_t evaluate(void) override {
+        bool_t tmp = (A.value & B.value) ? 0 : 1;
+        if(tmp != output_value) {
+            output_value = tmp;
+            return 1;
+        }
+        return 0;
+    }
+};
+
+struct OR_t : public logic_element_t {
+    input_port_t A, B;
+
+    OR_t(void) : logic_element_t(true) { ; }
 
     bool_t evaluate(void) override {
         bool_t tmp = A.value | B.value;
+        if(tmp != output_value) {
+            output_value = tmp;
+            return 1;
+        }
+        return 0;
+    }
+};
+
+struct OR_4_t : public logic_element_t {
+
+    input_port_t inputs[4];
+
+    OR_4_t(void) : logic_element_t(true) { ; }
+
+    bool_t evaluate(void) override {
+        bool_t tmp = 0;
+
+        for(int i : {0, 1, 2, 3})
+            tmp |= inputs[i].value;
+
+        if(tmp != output_value) {
+            output_value = tmp;
+            return 1;
+        }
+        return 0;
+    }
+};
+
+
+struct NOR_t : public logic_element_t {
+
+    input_port_t A, B;
+
+    NOR_t(void) : logic_element_t(true) { ; }
+
+    bool_t evaluate(void) override {
+        bool_t tmp = (A.value | B.value) ? 0 : 1;
         if(tmp != output_value) {
             output_value = tmp;
             return 1;
@@ -131,6 +234,8 @@ struct XOR_t : public logic_element_t {
 
     input_port_t A, B;
 
+    XOR_t(void) : logic_element_t(true) { ; }
+
     bool_t evaluate(void) override {
         bool_t tmp = A.value ^ B.value;
         if(tmp != output_value) {
@@ -141,3 +246,18 @@ struct XOR_t : public logic_element_t {
     }
 };
 
+struct XNOR_t : public logic_element_t {
+
+    input_port_t A, B;
+
+    XNOR_t(void) : logic_element_t(true) { ; }
+
+    bool_t evaluate(void) override {
+        bool_t tmp = (A.value ^ B.value) ? 0 : 1;
+        if(tmp != output_value) {
+            output_value = tmp;
+            return 1;
+        }
+        return 0;
+    }
+};
