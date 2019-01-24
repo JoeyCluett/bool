@@ -24,16 +24,25 @@ struct logic_element_t {
         input_port(void) { this_vector.push_back(this); }
         
         static void fetch(void) {
-            std::cout << "Fetching inputs...\n" << std::flush;
+            //std::cout << "Fetching inputs...\n" << std::flush;
             for(input_port* ip : this_vector) {
-                std::cout << (void*)ip << std::endl << std::flush;
+                //std::cout << (void*)ip << std::endl << std::flush;
                 if(ip != NULL)
                     ip->value = (ip->src->output_value ? 1 : 0);
                 else
                     throw std::logic_error("input_port not connected");
             }
-            std::cout << "DONE\n" << std::flush;
+            //std::cout << "DONE\n" << std::flush;
         }
+
+        static auto begin(void) -> std::vector<input_port*>::iterator {
+            return this_vector.begin();
+        }
+
+        static auto end(void) -> std::vector<input_port*>::iterator {
+            return this_vector.end();
+        }
+
     };
 
     // constructor always adds *this to vector for 
@@ -132,6 +141,10 @@ struct NOT_t : public logic_element_t {
         }
         return 0;
     }
+
+    void print(void) {
+        std::cout << "NOT : " << Y.value << " -> " << output_value << std::endl;
+    }
 };
 
 struct AND_t : public logic_element_t {
@@ -147,6 +160,14 @@ struct AND_t : public logic_element_t {
         }
         return 0;
     }
+
+    void print(void) {
+        std::cout 
+                << "AND(2) : "
+                << A.value << B.value
+                << " -> " << output_value << std::endl;
+    }
+
 };
 
 struct AND_3_t : public logic_element_t {
@@ -161,6 +182,14 @@ struct AND_3_t : public logic_element_t {
         }
         return 0;
     }
+
+    void print(void) {
+        std::cout << "AND(3) : ";
+        for(int i : {0, 1, 2})
+            std::cout << inputs[i].value;
+        std::cout << " -> " << output_value << std::endl;
+    }
+
 };
 
 struct NAND_t : public logic_element_t {
@@ -175,6 +204,13 @@ struct NAND_t : public logic_element_t {
             return 1;
         }
         return 0;
+    }
+
+    void print(void) {
+        std::cout 
+                << "NAND(2) : "
+                << A.value << B.value
+                << " -> " << output_value << std::endl;
     }
 };
 
@@ -191,6 +227,13 @@ struct OR_t : public logic_element_t {
         }
         return 0;
     }
+
+    void print(void) {
+        std::cout 
+                << "OR(2) : "
+                << A.value << B.value
+                << " -> " << output_value << std::endl;
+    }
 };
 
 struct OR_4_t : public logic_element_t {
@@ -202,17 +245,26 @@ struct OR_4_t : public logic_element_t {
     bool_t evaluate(void) override {
         bool_t tmp = 0;
 
-        for(int i : {0, 1, 2, 3})
-            tmp |= inputs[i].value;
+        tmp = 
+            inputs[0].value | inputs[1].value | 
+            inputs[2].value | inputs[3].value;
 
         if(tmp != output_value) {
             output_value = tmp;
+            //std::cout << "OR4 changed...\n";
             return 1;
         }
         return 0;
     }
-};
 
+    void print(void) {
+        std::cout << "OR(4) : ";
+        for(int i : {0, 1, 2, 3})
+            std::cout << inputs[i].value;
+        std::cout << " -> " << output_value << std::endl;
+    }
+
+};
 
 struct NOR_t : public logic_element_t {
 
@@ -227,6 +279,13 @@ struct NOR_t : public logic_element_t {
             return 1;
         }
         return 0;
+    }
+
+    void print(void) {
+        std::cout 
+                << "NOR(2) : "
+                << A.value << B.value
+                << " -> " << output_value << std::endl;
     }
 };
 
@@ -244,6 +303,13 @@ struct XOR_t : public logic_element_t {
         }
         return 0;
     }
+
+    void print(void) {
+        std::cout 
+                << "XOR(2) : "
+                << A.value << B.value
+                << " -> " << output_value << std::endl;
+    }
 };
 
 struct XNOR_t : public logic_element_t {
@@ -259,5 +325,12 @@ struct XNOR_t : public logic_element_t {
             return 1;
         }
         return 0;
+    }
+
+    void print(void) {
+        std::cout 
+                << "XNOR(2) : "
+                << A.value << B.value
+                << " -> " << output_value << std::endl;
     }
 };

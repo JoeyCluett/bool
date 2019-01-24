@@ -20,15 +20,14 @@ int main(int argc, char* argv[]) {
     int iter = 0;
     while(true) {
         getchar();
+        iter++;
 
         for(int i : {0, 1, 2})
-            inputs[i] = iter & (i << i);
+            inputs[i].output_value = (iter & (1 << i)) ? 1 : 0;
 
         cout << logic_element_t::simulate_to_steady() << " cycles to steady...\n";
 
         comparator.print();
-
-        iter++;
     }
 
     return 0;
