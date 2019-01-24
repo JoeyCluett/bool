@@ -8,9 +8,9 @@ int main(int argc, char* argv[]) {
 
     LOGICAL_CONSTANT inputs[2];
     
-    D_Latch_Enable latch;
-    latch.set_D(inputs+0);
-    latch.set_E(inputs+1);
+    D_FlipFlop latch;
+    latch.set_Data(inputs+0);
+    latch.set_Clock(inputs+1);
 
     int iter = 0;
     while(1) {

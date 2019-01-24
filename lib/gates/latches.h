@@ -59,12 +59,15 @@ struct D_Latch_Enable {
 
     D_Latch_Enable(void) {
         a1.B.src = &n;
-        latch.set_R(&a2);
+        latch.set_R(&a2); // have to do this in reverse or it doesnt work
         latch.set_S(&a1);
     }
 
     void set_D(logic_element_t* el) { n.Y.src = el; a2.A.src = el; }
     void set_E(logic_element_t* el) { a1.A.src = el; a2.B.src = el; }
+
+    logic_element_t* get_Q(void) { return latch.get_Q(); }
+    logic_element_t* get_QNot(void) { return latch.get_QNot(); }
 
     bool_t get_D_value(void) { return n.Y.value; }
     bool_t get_E_value(void) { return a2.B.value; }
@@ -74,6 +77,29 @@ struct D_Latch_Enable {
     void print(void) {
         std::cout << "D: " << get_D_value() << ", E:  " << get_E_value() << std::endl;
         std::cout << "Q: " << get_Q_value() << ", Q': " << get_QNot_value() << std::endl;
+    }
+
+};
+
+struct D_FlipFlop {
+    D_Latch_Enable master;
+    D_Latch_Enable slave;
+
+    NOT_t n;
+
+    D_FlipFlop(void) {
+        slave.set_D(master.get_Q());
+        master.set_E(&n);
+    }
+
+    void set_Clock(logic_element_t* el) { n.Y.src = el; slave.set_E(el); }
+    void set_Data(logic_element_t* el) { master.set_D(el); }
+
+    bool_t get_Data(void) { return slave.get_D_value(); }
+
+    void print(void) {
+        std::cout << "D: " << master.get_D_value() << ", Clk: " << n.Y.value << std::endl;
+        std::cout << "Q: " << slave.get_Q_value() << ", Q':  " << slave.get_QNot_value() << std::endl;
     }
 
 };
