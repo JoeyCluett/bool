@@ -76,16 +76,44 @@ struct bit_comparator_t {
         } else {
             std::cout << "X X X X\n";
         }
-
-        /*std::cout << "N1 : " << n1.output_value << std::endl;
-        std::cout << "X1 : " << x1.output_value << std::endl;
-        std::cout << "A1 : " << a1.output_value << std::endl;
-        std::cout << "A2 : " << a2.output_value << std::endl;
-        std::cout << "O1 : " << o1.output_value << std::endl;
-        std::cout << std::endl;*/
     }
 
+};
+
+struct Comparator_4 {
+    OR_4_t or_a;
+    OR_4_t or_b;
     
+    // 4 seperate comparators linked together
+    bit_comparator_t bits[4];
+
+    Comparator_4(void) {
+        // connect carries together
+        for(int i : {2, 1, 0})
+            bits[i].set_Ci(bits[i+1].get_Co());
+        bits[3].set_Ci(LOW);
+
+        // connect the OR'd outputs together
+        for(int i : {0, 1, 2, 3}) {
+            or_a.inputs[i].src = bits[i].get_Ao();
+            or_b.inputs[i].src = bits[i].get_Bo();
+        }
+    }
+
+    void set_A(std::array<logic_element_t*, 4> arr) { 
+        for(int i : {0, 1, 2, 3}) bits[i].set_A(arr[i]); }
+    void set_B(std::array<logic_element_t*, 4> arr) {
+        for(int i : {0, 1, 2, 3}) bits[i].set_B(arr[i]); }
+
+    logic_element_t* get_Ao(void) { return &or_a; }
+    logic_element_t* get_Bo(void) { return &or_b; }
+    logic_element_t* get_Co(void) { return bits[0].get_Co(); }
+
+
+
+    void print(void) {
+
+    }
 
 };
 
