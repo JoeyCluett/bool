@@ -81,11 +81,11 @@ struct bit_comparator_t {
 };
 
 struct Comparator_4 {
-    OR_4_t or_a;
-    OR_4_t or_b;
-    
     // 4 seperate comparators linked together
     bit_comparator_t bits[4];
+
+    OR_4_t or_a;
+    OR_4_t or_b;
 
     Comparator_4(void) {
         // connect carries together
@@ -101,17 +101,54 @@ struct Comparator_4 {
     }
 
     void set_A(std::array<logic_element_t*, 4> arr) { 
-        for(int i : {0, 1, 2, 3}) bits[i].set_A(arr[i]); }
+        for(int i : {0, 1, 2, 3}) 
+            bits[i].set_A(arr[i]); 
+    }
+
     void set_B(std::array<logic_element_t*, 4> arr) {
-        for(int i : {0, 1, 2, 3}) bits[i].set_B(arr[i]); }
+        for(int i : {0, 1, 2, 3}) 
+            bits[i].set_B(arr[i]); 
+    }
+
+    void set_Ci(logic_element_t* el) { bits[3].set_Ci(el); }
 
     logic_element_t* get_Ao(void) { return &or_a; }
     logic_element_t* get_Bo(void) { return &or_b; }
     logic_element_t* get_Co(void) { return bits[0].get_Co(); }
 
+    bool_t get_Ao_value(void) { return or_a.output_value; }
+    bool_t get_Bo_value(void) { return or_b.output_value; }
 
+    bool_t get_Ci_value(void) { return bits[3].get_Ci_value(); }
 
     void print(void) {
+        std::cout << "Ai : ";
+        for(int i : {3, 2, 1, 0})
+            std::cout << bits[i].get_Ai_value();
+        std::cout << "\nBi : ";
+        for(int i : {3, 2, 1, 0})
+            std::cout << bits[i].get_Bi_value();
+        std::cout << "\n\n";
+        std::cout << "Ci : " << bits[3].get_Ci_value() << "\n\n";
+
+        bool_t a_output = get_Ao_value();
+        bool_t b_output = get_Bo_value();
+        bool_t c_input = get_Ci_value();
+
+        if(!c_input) {
+            if(!a_output && !b_output)
+                std::cout << "A == B\n";
+            else if(a_output && !b_output)
+                std::cout << "A > B\n";
+            else if(!a_output && b_output)
+                std::cout << "A < B\n";
+            else
+                throw std::runtime_error("Something bad happened in the comparator");
+        }
+        else {
+            std::cout << "X X X X\n";
+        }
+
 
     }
 

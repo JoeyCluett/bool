@@ -24,15 +24,17 @@ struct logic_element_t {
         input_port(void) { this_vector.push_back(this); }
         
         static void fetch(void) {
-            //std::cout << "Fetching inputs...\n" << std::flush;
+            std::cout << "Fetching inputs...\n" << std::flush;
+            int iter = 1;
             for(input_port* ip : this_vector) {
-                //std::cout << (void*)ip << std::endl << std::flush;
-                if(ip != NULL)
+                std::cout << iter++ << " " << (void*)ip << std::endl << std::flush;
+                if(ip->src != NULL) {
                     ip->value = (ip->src->output_value ? 1 : 0);
-                else
+                } else {
                     throw std::logic_error("input_port not connected");
+                }
             }
-            //std::cout << "DONE\n" << std::flush;
+            std::cout << "DONE\n" << std::flush;
         }
 
         static auto begin(void) -> std::vector<input_port*>::iterator {
@@ -118,7 +120,6 @@ struct LOGICAL_CONSTANT : public logic_element_t {
     bool_t evaluate(void) override {
         return false;
     }
-
 };
 
 // used as global constants
