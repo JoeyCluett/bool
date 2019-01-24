@@ -24,17 +24,17 @@ struct logic_element_t {
         input_port(void) { this_vector.push_back(this); }
         
         static void fetch(void) {
-            std::cout << "Fetching inputs...\n" << std::flush;
-            int iter = 1;
+            //std::cout << "Fetching inputs...\n" << std::flush;
+            //int iter = 1;
             for(input_port* ip : this_vector) {
-                std::cout << iter++ << " " << (void*)ip << std::endl << std::flush;
+                //std::cout << iter++ << " " << (void*)ip << std::endl << std::flush;
                 if(ip->src != NULL) {
                     ip->value = (ip->src->output_value ? 1 : 0);
                 } else {
                     throw std::logic_error("input_port not connected");
                 }
             }
-            std::cout << "DONE\n" << std::flush;
+            //std::cout << "DONE\n" << std::flush;
         }
 
         static auto begin(void) -> std::vector<input_port*>::iterator {
@@ -146,6 +146,12 @@ struct NOT_t : public logic_element_t {
     void print(void) {
         std::cout << "NOT : " << Y.value << " -> " << output_value << std::endl;
     }
+
+    friend std::ostream& operator<<(std::ostream& os, NOT_t& gate) {
+        os << gate.Y.value << " -> " << gate.output_value;
+        return os;
+    }
+
 };
 
 struct AND_t : public logic_element_t {
@@ -167,6 +173,11 @@ struct AND_t : public logic_element_t {
                 << "AND(2) : "
                 << A.value << B.value
                 << " -> " << output_value << std::endl;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, AND_t& gate) {
+        os << gate.A.value << gate.B.value << " -> " << gate.output_value;
+        return os;
     }
 
 };
@@ -191,6 +202,13 @@ struct AND_3_t : public logic_element_t {
         std::cout << " -> " << output_value << std::endl;
     }
 
+    friend std::ostream& operator<<(std::ostream& os, AND_3_t& gate) {
+        for(int i : {0, 1, 2})
+            os << gate.inputs[i].value;
+        os << " -> " << gate.output_value;
+        return os;
+    }
+
 };
 
 struct NAND_t : public logic_element_t {
@@ -213,6 +231,11 @@ struct NAND_t : public logic_element_t {
                 << A.value << B.value
                 << " -> " << output_value << std::endl;
     }
+
+    friend std::ostream& operator<<(std::ostream& os, NAND_t& gate) {
+        os << gate.A.value << gate.B.value << " -> " << gate.output_value;
+        return os;
+    }
 };
 
 struct OR_t : public logic_element_t {
@@ -234,6 +257,11 @@ struct OR_t : public logic_element_t {
                 << "OR(2) : "
                 << A.value << B.value
                 << " -> " << output_value << std::endl;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, OR_t& gate) {
+        os << gate.A.value << gate.B.value << " -> " << gate.output_value;
+        return os;
     }
 };
 
@@ -265,6 +293,13 @@ struct OR_4_t : public logic_element_t {
         std::cout << " -> " << output_value << std::endl;
     }
 
+    friend std::ostream& operator<<(std::ostream& os, OR_4_t& gate) {
+        for(int i : {0, 1, 2, 3})
+            os << gate.inputs[i].value;
+        os << " -> " << gate.output_value;
+        return os;
+    }
+
 };
 
 struct NOR_t : public logic_element_t {
@@ -287,6 +322,11 @@ struct NOR_t : public logic_element_t {
                 << "NOR(2) : "
                 << A.value << B.value
                 << " -> " << output_value << std::endl;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, NOR_t& gate) {
+        os << gate.A.value << gate.B.value << " -> " << gate.output_value;
+        return os;
     }
 };
 
@@ -311,6 +351,11 @@ struct XOR_t : public logic_element_t {
                 << A.value << B.value
                 << " -> " << output_value << std::endl;
     }
+
+    friend std::ostream& operator<<(std::ostream& os, XOR_t& gate) {
+        os << gate.A.value << gate.B.value << " -> " << gate.output_value;
+        return os;
+    }
 };
 
 struct XNOR_t : public logic_element_t {
@@ -333,5 +378,10 @@ struct XNOR_t : public logic_element_t {
                 << "XNOR(2) : "
                 << A.value << B.value
                 << " -> " << output_value << std::endl;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, XNOR_t& gate) {
+        os << gate.A.value << gate.B.value << " -> " << gate.output_value;
+        return os;
     }
 };

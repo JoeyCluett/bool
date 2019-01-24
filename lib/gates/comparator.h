@@ -154,4 +154,23 @@ struct Comparator_4 {
 
 };
 
+struct Comparator_8 {
+    Comparator_4 msb;
+    Comparator_4 lsb;
 
+    OR_t or_a;
+    OR_t or_b;
+
+    Comparator_8(void) {
+        // link carries together
+        lsb.set_Ci(msb.get_Co());
+
+        // collect
+        or_a.A.src = msb.get_Ao();
+        or_a.B.src = lsb.get_Ao();
+
+        or_b.A.src = msb.get_Bo();
+        or_b.B.src = lsb.get_Bo();
+    }
+
+};
