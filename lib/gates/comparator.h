@@ -165,12 +165,22 @@ struct Comparator_8 {
         // link carries together
         lsb.set_Ci(msb.get_Co());
 
-        // collect
+        // collect outputs
         or_a.A.src = msb.get_Ao();
         or_a.B.src = lsb.get_Ao();
 
         or_b.A.src = msb.get_Bo();
         or_b.B.src = lsb.get_Bo();
+    }
+
+    void set_A(std::array<logic_element_t*, 8> arr) {
+        lsb.set_A({arr[0], arr[1], arr[2], arr[3]});
+        msb.set_A({arr[4], arr[5], arr[6], arr[7]});
+    }
+
+    void set_B(std::array<logic_element_t*, 8> arr) {
+        lsb.set_B({arr[0], arr[1], arr[2], arr[3]});
+        msb.set_B({arr[4], arr[5], arr[6], arr[7]});
     }
 
 };
