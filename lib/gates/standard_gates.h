@@ -47,7 +47,7 @@ struct logic_element_t {
 
     };
 
-    // constructor always adds *this to vector for 
+    // constructor always adds 'this' to vector for 
     // simulation purposes
     logic_element_t(bool add_to_ct = false) { 
         this_vector.push_back(this); 
@@ -98,7 +98,13 @@ struct logic_element_t {
     // also where the magic of simulation happens
     // returns true if state of gate changed. this allows 
     //the simulator to find a steady state automatically
-    virtual bool_t evaluate(void) = 0;
+    virtual bool_t evaluate(void) { return false; };
+
+    // this method called at the end of a simulation cycle. 
+    // useful for setting flags in flip-flops and allowing 
+    // them to respond to only a single update cycle. 
+    // elements are not required to implement this method
+    virtual void post_evaluate(void) { return; }
 
     // optionally define a print function for the logic 
     // element. this should display inputs and outputs

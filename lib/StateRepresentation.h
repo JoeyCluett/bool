@@ -57,7 +57,7 @@ private:
 
     auto split_next_state(std::string str) -> std::pair<int, int> {
         std::string first;
-        std::string second;
+        std::string second = "jk";
 
         const int STATE_first_string = 0;
         const int STATE_second_string = 1;
@@ -83,6 +83,10 @@ private:
             std::stoi(first),
             std::stoi(second)
         };
+    }
+
+    auto split_output(std::string str) -> std::pair<int, int> {
+        return split_next_state(str);
     }
 
     int index_of_state(int state) {
@@ -113,6 +117,11 @@ public:
             if(sr.type == machine_type::moore) {
                 os << st.current_state << "  |  " << st.next_if_zero << "  "
                 << st.next_if_one << "  |  " << st.z << std::endl;
+            }
+            else if(sr.type == machine_type::mealy) {
+                os << st.current_state << "  |  " << st.next_if_zero "  "
+                << st.next_if_one << "  |  " << st.z_if_zero << "  "
+                << st.z_if_one << std::endl;
             }
         }
 
@@ -255,11 +264,33 @@ StateRepresentation::StateRepresentation(std::string input) {
 
             this->state_list.push_back(s);
 
+            // iterate through all of the nodes
             current_node = current_node.next();
         } while(!current_node.empty());
+
     }
-    else {
-        throw std::runtime_error("StateRepresentation -> currently, only moore machines are supported");
+    else { // machine type is mealy
+
+        do {
+
+            int id     = std::stoi(current_node.attr("id").value());
+            auto trans = this->split_next_state(current_node.attr("transition").value());
+            auto out   = this->split_output(current_node.attr("output").value());
+
+            single_state_t s;
+
+            s.current_state = id;
+            s.next_if_zero  = trans.first;
+            s.next_if_one   = trans.second;
+            s.z_if_zero     = out.first;
+            s.z_if_one      = out.second;
+
+            this->state_list.push_back(s);
+
+            // iterate through all of the nodes
+            current_node = current_node.next();
+        } while(!current_node.empty());
+
     }
 
 }

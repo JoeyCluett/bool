@@ -1,0 +1,13 @@
+<diagram
+    type="mealy"
+    desc="sample input file from 1-31-19 in Advanced Digital Design">
+
+    <!-- transition="<x=0>:<x=1>" output="<x=0>:<x=1>" -->
+    <state id="0" transition="0:1" output="0:0"/>
+    <state id="1" transition="4:2" output="0:0"/>
+    <state id="2" transition="3:2" output="0:0"/>
+    <state id="3" transition="5:2" output="1:0"/>
+    <state id="4" transition="5:1" output="0:0"/>
+    <state id="5" transition="0:1" output="1:0"/>
+
+</diagram>
