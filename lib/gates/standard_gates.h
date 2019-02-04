@@ -4,9 +4,16 @@
 #include <iostream>
 #include <vector>
 #include <stdexcept>
+#include <array>
 
 // tired of all the stupid zero/nonzero rules of bools
 typedef int bool_t;
+
+// forward declaration needed for the using statement below
+struct logic_element_t;
+
+template<size_t sz> 
+using logic_element_array_t = std::array<logic_element_t*, sz>;
 
 struct logic_element_t {
 
@@ -84,6 +91,23 @@ struct logic_element_t {
         return total_iters;
     }
 
+    // wrapper over other simulation functionality
+    static int simulate(void) {
+
+        for(auto* ptr : this_vector)
+            ptr->pre_fetch();
+
+        for(auto* ptr : this_vector)
+            ptr->pre_evaluate();
+
+        int iters = simulate_to_steady();
+
+        for(auto* ptr : this_vector)
+            ptr->post_evaluate();
+
+        return iters;
+    }
+
     // used by EVERY logic gate
     bool_t output_value;
 
@@ -92,6 +116,19 @@ struct logic_element_t {
         // bools sometimes lie
         return i ? 1 : 0;
     }
+
+    // mostly to help with flip flop designs and clock 
+    // sensitive elements. the regular evaluate loop 
+    // will continually call global_fetch(). some 
+    // elements need to ignore that call. this method 
+    // fills the gap that is left over
+    virtual void pre_fetch(void) { return; }
+
+    // called once before the regular evaluate loop. allows 
+    // clocked elements to only respond to a clock input 
+    // the first time then simply allow other elements to 
+    // propagate the signal through the rest of the system
+    virtual void pre_evaluate(void) { return; }
 
     // each logic element internally evaluates its own 
     // inputs. this allows for feedback loops. this is 
@@ -112,6 +149,7 @@ struct logic_element_t {
 
 };
 
+// initialization of static members
 std::vector<logic_element_t*> logic_element_t::this_vector;
 std::vector<logic_element_t::input_port*> logic_element_t::input_port::this_vector;
 size_t logic_element_t::total_gates = 0L;
@@ -119,12 +157,9 @@ size_t logic_element_t::total_gates = 0L;
 typedef logic_element_t::input_port input_port_t;
 
 struct LOGICAL_CONSTANT : public logic_element_t {
-    LOGICAL_CONSTANT(bool_t v = false) {
+    LOGICAL_CONSTANT(bool_t v = false) 
+            : logic_element_t(false) {
         output_value = v;
-    }
-
-    bool_t evaluate(void) override {
-        return false;
     }
 };
 
@@ -163,6 +198,7 @@ struct NOT_t : public logic_element_t {
 struct AND_t : public logic_element_t {
     input_port_t A, B;
     
+    // this one should be tracked
     AND_t(void) : logic_element_t(true) { ; }
 
     bool_t evaluate(void) override {

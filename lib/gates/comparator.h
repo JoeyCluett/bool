@@ -148,8 +148,7 @@ struct Comparator_4 {
         else {
             std::cout << "X X X X\n";
         }
-
-
+        
     }
 
 };
