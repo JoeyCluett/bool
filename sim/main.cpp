@@ -28,12 +28,14 @@ int main(int argc, char* argv[]) {
 
     while(!module.empty()) {
         
-        new SimulationModule(module, module_map);
+        if(module.name() == "module")
+            // we need this to NOT be destroyed when it goes out of scope
+            new SimulationModule(module, module_map);
 
         module = module.next();
     }
 
-    cout << "DONE\n";
+    cout << "DONE\n\n\n";
 
     // print the details of the modules placed here
     auto it = module_map.begin();
