@@ -40,6 +40,11 @@ public:
         return (_attr == NULL);
     }
 
+    std::ostream& format_output(std::ostream& os) {
+        os << this->name() << "=\"" << this->value() << "\"";
+        return os;
+    }
+
 };
 
 class XmlNode {
@@ -121,6 +126,39 @@ public:
         }
 
         return true;
+    }
+
+    std::ostream& format_output(std::ostream& os, std::string indent = "") {
+        os << indent << '<' << this->name();
+        
+        auto print_child_nodes = [&](void) -> void {
+            auto child_node = this->child();
+            if(!child_node.empty()) {
+                os << ">\n";
+                while(!child_node.empty()) {
+                    child_node.format_output(os, indent + "    ");    
+                    child_node = child_node.next();
+                }
+                os << indent << "</" << this->name() << ">\n";
+            }
+            else {
+                // node is barren
+                os << "/>\n";
+            }
+        };
+
+        auto attr_node = this->attr();
+        if(!attr_node.empty()) {
+            while(!attr_node.empty()) {
+                os << ' ';
+                attr_node.format_output(os);
+                attr_node = attr_node.next();
+            }
+        }
+
+        print_child_nodes();
+        
+        return os;
     }
 
 };

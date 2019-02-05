@@ -1,0 +1,39 @@
+<root>
+    <module name="half-adder">
+
+        <gate type="XOR" name="xor1"/>
+        <gate type="AND" name="and1"/>
+
+        <!-- input signals can go to multiple destinations -->
+        <input name="A" to="and1.A:xor1.A"/>
+        <input name="B" to="and1.B:xor1.B"/>
+
+        <!-- outputs can only have one source -->
+        <output name="SUM"   from="xor1"/>
+        <output name="CARRY" from="and1"/>
+
+    </module>
+
+    <module name="full-adder">
+
+        <!-- instance is always a predefined module -->
+        <instance type="half-adder" name="lower-adder"/>
+        <instance type="half-adder" name="upper-adder"/>
+        <gate     type="OR"         name="carry-or"/>
+
+        <!-- signals must have only one source but can go to multiple dest -->
+        <signal from="lower-adder.SUM" to="upper-adder.B"/>
+        
+        <!-- collect all of the carry signals -->
+        <signal from="lower-adder.CARRY" to="carry-or.B"/>
+        <signal from="upper-adder.CARRY" to="carry-or.A"/>
+
+        <input name="CARRY-IN" to="upper-adder.A"/>
+        <input name="A"        to="lower-adder.A"/>
+        <input name="B"        to="lower-adder.B"/>
+
+        <output name="SUM"       from="upper-adder.SUM"/>
+        <output name="CARRY-OUT" from="carry-or"/>
+
+    </module>
+</root>

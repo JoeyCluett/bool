@@ -1,6 +1,5 @@
 {
     "files.associations": {
-        "stdexcept": "cpp",
         "cctype": "cpp",
         "cmath": "cpp",
         "cstddef": "cpp",
@@ -32,6 +31,7 @@
         "ostream": "cpp",
         "ratio": "cpp",
         "sstream": "cpp",
+        "stdexcept": "cpp",
         "streambuf": "cpp",
         "system_error": "cpp",
         "thread": "cpp",

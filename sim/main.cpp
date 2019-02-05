@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 // XML parsing utility
 #include <XmlDocument.h>
@@ -12,6 +13,9 @@
 
 using namespace std;
 
+// evaluates all of the import statements in the simulator file
+void preprocess_simulator_files(std::string filename, std::ostream& os);
+
 int main(int argc, char* argv[]) {
 
     if(argc != 2) {
@@ -21,7 +25,15 @@ int main(int argc, char* argv[]) {
 
     std::map<std::string, SimulationModule*> module_map;
 
-    XmlDocument doc(argv[1]);
+    std::ofstream ofile("/tmp/jsimcompiler_input_file.xml");
+    ofile << "<root>\n";
+
+    preprocess_simulator_files(argv[1], ofile);
+
+    ofile << "</root>\n\n";
+    ofile.close();
+
+    XmlDocument doc("/tmp/jsimcompiler_input_file.xml");
     auto module = doc.root().child();
 
     cout << "Building logic modules...";
@@ -31,6 +43,8 @@ int main(int argc, char* argv[]) {
         if(module.name() == "module")
             // we need this to NOT be destroyed when it goes out of scope
             new SimulationModule(module, module_map);
+        else
+            throw std::runtime_error("Unknown tag: " + module.name());
 
         module = module.next();
     }
@@ -47,4 +61,20 @@ int main(int argc, char* argv[]) {
     }
 
     return 0;
+}
+
+void preprocess_simulator_files(std::string filename, std::ostream& os) {
+    XmlDocument doc(filename);
+    auto module = doc.root().child();
+
+    while(!module.empty()) {
+        if(module.name() == "import") {
+            preprocess_simulator_files(module.attr("name").value() + ".xml", os);
+        }
+        else if(module.name() == "module") {
+            module.format_output(os, "    ");
+        }
+
+        module = module.next();
+    }
 }

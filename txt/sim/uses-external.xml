@@ -1,46 +1,5 @@
 <root>
     <!-- you dont need to specify the .xml extension -->
+    <import name="adder-logic"/>
     <import name="logic-sim-sample"/>
-
-    <module name="4-bit-adder">
-
-        <!-- multiple instances of the same type of entity -->
-        <instance type="full-adder" name="bit0"/>
-        <instance type="full-adder" name="bit1"/>
-        <instance type="full-adder" name="bit2"/>
-        <instance type="full-adder" name="bit3"/>
-        
-        <!-- set all of those pesky carry bits -->
-        <signal from="bit0.CARRY-OUT" to="bit1.CARRY-IN"/>
-        <signal from="bit1.CARRY-OUT" to="bit2.CARRY-IN"/>
-        <signal from="bit2.CARRY-OUT" to="bit3.CARRY-IN"/>
-
-        <!-- arrays of input/output values -->
-        <inputvec size="4" name="A" to="bit0.A:bit1.A:bit2.A:bit3.A"/>
-        <inputvec size="4" name="B" to="bit0.B:bit1.B:bit2.B:bit3.B"/>
-
-        <outputvec size="4" name="SUM" from="bit0.SUM:bit1.SUM:bit2.SUM:bit3.SUM"/>
-
-        <!-- single bit carry in/out -->
-        <input name="CARRY-IN" to="bit0.CARRY-IN"/>
-        <output name="CARRY-OUT" from="bit3.CARRY-OUT"/>
-
-    </module>
-
-    <module name="8-bit-adder">
-
-        <instance type="4-bit-adder" name="lsb"/>
-        <instance type="4-bit-adder" name="msb"/>
-
-        <signal from="lsb.CARRY-OUT" to="msb.CARRY-IN"/>
-
-        <inputvec  size="8" name="A"   to="lsb.A:msb.A"/>
-        <inputvec  size="8" name="B"   to="lsb.B:msb.B"/>
-        <outputvec size="8" name="SUM" from="lsb.SUM:msb.SUM"/>
-
-        <input name="CARRY-IN" to="lsb.CARRY-IN"/>
-        <output name="CARRY-OUT" from="msb.CARRY-OUT"/>
-
-    </module>
-
 </root>

@@ -8,7 +8,9 @@ int main(int argc, char* argv[]) {
 
     XmlDocument doc("config.xml");
 
-    cout << doc << endl;
+    auto root_node = doc.root();
+
+    root_node.format_output(cout);
 
     return 0;
 }
