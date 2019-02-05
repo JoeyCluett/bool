@@ -9,7 +9,6 @@ HALF-ADDER
             A ->
                 xor1.A
                 and1.A
-
             B -> 
                 xor1.B
                 and1.B
@@ -30,30 +29,27 @@ FULL-ADDER
         upper-adder.and1 : AND
         carry-or         : OR
 
-    connect:
-        inputs:
-            A ->
-                lower-adder.xor1.A
-                lower-adder.and1.A
+    inputs:
+        A ->
+            lower-adder.xor1.A
+            lower-adder.and1.A
+        B ->
+            lower-adder.xor1.B
+            lower-adder.and1.B
+        Ci ->
+            upper-adder.xor1.A
+            upper-adder.and1.A
 
-            B ->
-                lower-adder.xor1.B
-                lower-adder.and1.B
+    outputs:
+        upper-adder.xor1 -> SUM
+        carry-or         -> CARRY-OUT
 
-            Ci ->
-                upper-adder.xor1.A
-                upper-adder.and1.A
+    signals:
+        lower-adder.xor1 ->
+            upper-adder.xor1.B
+            upper-adder.and1.B
 
-        outputs:
-            upper-adder.xor1 -> SUM
-            carry-or         -> CARRY-OUT
-
-        signals:
-            lower-adder.xor1 ->
-                upper-adder.xor1.B
-                upper-adder.and1.B
-
-            upper-adder.and1 -> carry-or.A
-            lower-adder.and1 -> carry-or.B
+        upper-adder.and1 -> carry-or.A
+        lower-adder.and1 -> carry-or.B
 
 

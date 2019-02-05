@@ -214,6 +214,40 @@ public:
                 this->input_map.insert({_name, combine_inputs(final_to_targets)});
                 //this->input_map.insert({_name, _to});
             }
+            else if(n.name() == "output") {
+                
+            }
+            else if(n.name() == "signal") {
+                //std::cout << "signal found in file\n";
+
+                // every signal must have these attributes
+                n.hasAttrs({"from", "to"}, true);
+                n.hasOnlyAttrs({"from", "to"}, true);
+
+                auto _from = n.attr("from").value();
+                auto _to   = n.attr("to").value();
+
+                //std::cout << "  from -> " << _from << std::endl;
+                //std::cout << "  to   -> " << _to << std::endl;
+
+                // ==================================================
+                // fully qualify the source gate
+                auto src = this->split_period_string(_from);
+                // find the underlying type of whatever this is
+                auto src_iter = this->instance_map.find(src.at(0));
+                if(src_iter != this->instance_map.end()) {
+                    // this is a nested type
+                    
+                }
+                else {
+                    // this is a logic gate element
+
+                }
+
+                // ==================================================
+                // fully qualify all of the dest gate ports
+
+            }
 
             n = n.next();
         }

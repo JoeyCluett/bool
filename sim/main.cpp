@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <unistd.h>
 
 // XML parsing utility
 #include <XmlDocument.h>
@@ -60,6 +61,8 @@ int main(int argc, char* argv[]) {
         it++;
     }
 
+    //usleep(3000000);
+
     return 0;
 }
 
@@ -69,10 +72,14 @@ void preprocess_simulator_files(std::string filename, std::ostream& os) {
 
     while(!module.empty()) {
         if(module.name() == "import") {
+            // recursively evaluate all import statements
             preprocess_simulator_files(module.attr("name").value() + ".xml", os);
         }
         else if(module.name() == "module") {
             module.format_output(os, "    ");
+        }
+        else {
+            throw std::runtime_error("In file '" + filename + "', unknown tag '" + module.name() + "' caught during preprocessing phase");
         }
 
         module = module.next();

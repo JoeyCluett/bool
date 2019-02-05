@@ -40,4 +40,21 @@
 
     </module>
 
+    <!-- just a really large module because i can -->
+    <module name="16-bit-adder">
+    
+        <instance type="8-bit-adder" name="lsb"/>
+        <instance type="8-bit-adder" name="msb"/>
+
+        <signal from="lsb.CARRY-OUT" to="msb.CARRY-IN"/>
+
+        <inputvec name="A" size="16" to="lsb.A:msb.A"/>
+        <inputvec name="B" size="16" to="lsb.B:msb.B"/>
+        <outputvec name="SUM" size="16" from="lsb.SUM:msb.SUM"/>
+
+        <input name="CARRY-IN" to="lsb.CARRY-IN"/>
+        <output name="CARRY-OUT" from="msb.CARRY-OUT"/>
+
+    </module>
+
 </root>
