@@ -3,12 +3,13 @@
 #include <XmlDocument.h>
 #include <XmlNode.h>
 #include <map>
+#include <sstream>
 
 enum class logic_type : int {
     NONE, OR, NOR, AND, NAND, XOR, XNOR, NOT, FLIPFLOP
 };
 
-// internal representation of 
+// internal representation of a module as defined in jsim standard
 class SimulationModule {
 private:
 
@@ -80,28 +81,28 @@ private:
     // each logic gate in a given simulation is tracked 
     // individually, this simply assists other modules 
     // in finding fully-qualified names for each gate
-    std::map<std::string, logic_type> gate_map;
+    std::map<std::string, logic_type> gate_map; // map<name, type(enum)>
 
     // every instance needs an associated type as well
-    std::map<std::string, std::string> instance_map;
+    std::map<std::string, std::string> instance_map; // map<name, type>
 
     // need to track how each gate in a given module 
     // is connected. otherwise, the simulation will 
     // throw a segfault every time it runs. this map 
     // needs to be iterated through when a module is 
     // instantiated to connect all of the inner pieces
-    std::map<std::string, std::string> signal_map;
+    std::map<std::string, std::string> signal_map; // map<src, dest(s)>
 
     // connections to the outside world. these are the 
     // only things that are available to outside modules
-    std::map<std::string, std::string> input_map;
-    std::map<std::string, std::string> output_map;
+    std::map<std::string, std::string> input_map;  // map<name, destination(s)>
+    std::map<std::string, std::string> output_map; // map<name, source>
 
 public:
     // generates an internal representation of a given module
     SimulationModule(XmlNode n, std::map<std::string, SimulationModule*>& module_map) {
         
-        // the XmlNode passed as argument should already be a ready-to-go XmlDocument
+        // the XmlNode passed as argument should already be a ready-to-go module
         this->module_name = n.attr("name").value();
 
         auto combine_inputs = [](std::vector<std::string>& v) -> std::string {
@@ -149,9 +150,12 @@ public:
                 try {
                     _mod = module_map.at(_type);
                 } catch(std::out_of_range& ex) {
+                    std::stringstream ss;
+                    n.format_output(ss);
+
                     throw std::runtime_error(
                         "In module '" + this->module_name + "' unable to find entity '"
-                        + _type + "' in module map");
+                        + _type + "' in module map\n" + ss.str());
                 }
 
                 // we know where the external module is, we need to go find all the infomation in it
@@ -215,7 +219,76 @@ public:
                 //this->input_map.insert({_name, _to});
             }
             else if(n.name() == "output") {
-                
+                //std::cout << "output found in file\n";
+
+                n.hasAttrs({"from", "name"}, true);
+                n.hasOnlyAttrs({"from", "name"}, true);
+
+                auto _from = n.attr("from").value();
+                auto _name = n.attr("name").value();
+
+                auto src = this->split_period_string(_from);
+                switch(src.size()) {
+                    case 1:
+                        // lowest level type
+                        break;
+                    case 2:
+                        {
+                            // search through lower level instance element
+                            //std::cout << "searching through lower level elements\n";
+                            auto instance_type = this->instance_map.find(src.at(0));
+                            if(instance_type != this->instance_map.end()) {
+                                auto module_ref = module_map.find(instance_type->second);
+
+                                if(module_ref != module_map.end()) {
+                                    // we have the module representation 
+                                    // now. grab the output we need
+                                    try {
+                                        auto str = module_ref->second->get_output(src.at(1));
+                                        str = src.at(0) + "." + str;
+                                        _from = str; // _from should now be fully evaluated
+                                    } catch(std::out_of_range& ex) {
+                                        std::stringstream ss;
+                                        n.format_output(ss);
+
+                                        throw std::runtime_error("Error in module '" + this->module_name 
+                                            + "', node 'output': unable to find output '"
+                                            + src.at(1) + "' in external module '" + instance_type->second
+                                            + "'\nOffending node:\n    " + ss.str());
+                                    }
+                                }
+                                else {
+                                    // this shouldnt ever happen and should be caught 
+                                    // by a different part of the program
+                                    throw std::runtime_error("Unable to find module of type '" +
+                                    instance_type->second + "' in global module map");
+                                }
+                            }
+                            else {
+                                std::stringstream ss;
+                                n.format_output(ss);
+
+                                // using a port that doesnt exist
+                                throw std::runtime_error("In module '" + this->module_name
+                                + "' unable to find instance type of '" + src.at(0)
+                                + "\n" + ss.str());
+                            }
+                        }
+                        break;
+                    default:
+                        {
+                            std::stringstream ss;
+                            n.format_output(ss);
+
+                            throw std::runtime_error(
+                                "In module '" + this->module_name + 
+                                "' error found in 'output' node: 'from' attribute"
+                                " has invalid number of period-seperated components\n"
+                                + ss.str());
+                        }
+                }
+
+                this->output_map.insert({_name, _from});
             }
             else if(n.name() == "signal") {
                 //std::cout << "signal found in file\n";
@@ -233,19 +306,121 @@ public:
                 // ==================================================
                 // fully qualify the source gate
                 auto src = this->split_period_string(_from);
-                // find the underlying type of whatever this is
-                auto src_iter = this->instance_map.find(src.at(0));
-                if(src_iter != this->instance_map.end()) {
-                    // this is a nested type
-                    
-                }
-                else {
-                    // this is a logic gate element
 
+                switch(src.size()) {
+                    case 1:
+                        // already the lowest level element
+                        break;
+                    case 2:
+                        {
+                            // search through lower level instance element
+                            //std::cout << "searching through lower level elements\n";
+                            auto instance_type = this->instance_map.find(src.at(0));
+                            if(instance_type != this->instance_map.end()) {
+                                auto module_ref = module_map.find(instance_type->second);
+
+                                if(module_ref != module_map.end()) {
+                                    // we have the module representation 
+                                    // now. grab the output we need
+                                    try {
+                                        auto str = module_ref->second->get_output(src.at(1));
+                                        str = src.at(0) + "." + str;
+                                        _from = str; // _from should now be fully evaluated
+                                    } catch(std::out_of_range& ex) {
+                                        std::stringstream ss;
+                                        n.format_output(ss);
+
+                                        throw std::runtime_error("Error in module '" + this->module_name 
+                                            + "', node 'signal': unable to find output '"
+                                            + src.at(1) + "' in external module '" + instance_type->second
+                                            + "'\nOffending node:\n    " + ss.str());
+                                    }
+                                }
+                                else {
+                                    // this shouldnt ever happen and should be caught 
+                                    // by a different part of the program
+                                    throw std::runtime_error("Unable to find module of type '" +
+                                    instance_type->second + "' in global module map");
+                                }
+                            }
+                            else {
+                                std::stringstream ss;
+                                n.format_output(ss);
+
+                                // using a port that doesnt exist
+                                throw std::runtime_error("In module '" + this->module_name
+                                + "' unable to find instance type of '" + src.at(0)
+                                + "\n" + ss.str());
+                            }
+                        }
+                        break;
+                    default:
+                        {
+                            std::stringstream ss;
+                            n.format_output(ss);
+
+                            throw std::runtime_error(
+                                "In module '" + this->module_name + 
+                                "' error found in 'signal' node: 'from' attribute"
+                                " has invalid number of period-seperated components\n"
+                                + ss.str());
+                        }
                 }
+
+                std::vector<std::string> to_dest_str;
 
                 // ==================================================
                 // fully qualify all of the dest gate ports
+                src = this->split_colon_string(_to);
+                for(auto src_str : src) {
+                    // now deal with each element individually
+                    auto str = this->split_period_string(src_str);
+                    
+                    // what type this element is
+                    auto instance_type = this->instance_map.find(str.at(0));
+                    if(instance_type != this->instance_map.end()) {
+                        // a composite type. need details
+                        auto module_ref = module_map.find(instance_type->second);
+                        if(module_ref != module_map.end()) {
+                            // found the correct module
+                            try {
+
+                                auto input_vec = module_ref->second->get_input_vector(str.at(1));
+
+                                for(auto& s : input_vec) {
+                                    to_dest_str.push_back(str.at(0) + "." + s);
+                                }
+
+                            } catch(std::out_of_range& ex) {
+                                std::stringstream ss;
+                                n.format_output(ss);
+
+                                throw std::runtime_error("error in module '"
+                                + this->module_name + "': output '" 
+                                + str.at(1) + "' of external module "
+                                "doesn't exist");
+                            }
+                        }
+                        else {
+                            // somthing went wrong. DO SOMETHING!
+                            std::stringstream ss;
+                            n.format_output(ss);
+
+                            throw std::runtime_error("error in module '"
+                                + this->module_name + "': unable to find "
+                                "nested entity of type '" + instance_type->second
+                                + "' in global module map");
+                        }
+
+                    }
+                    else {
+                        // simple gate type
+                        to_dest_str.push_back(src_str);
+                    }
+
+                }
+
+                this->signal_map.insert({_from, combine_inputs(to_dest_str)});
 
             }
 
@@ -272,6 +447,11 @@ public:
         return this->split_colon_string(str);
     }
 
+    auto get_output(std::string input) -> std::string {
+        auto str = this->output_map.at(input);
+        return str;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, SimulationModule& sm) {
         os << "module name: " << sm.module_name << std::endl;
         os << "\n\tgates:\n";
@@ -295,6 +475,30 @@ public:
                 for(auto& s : str_vec)
                     os << "\t\t\t" << s << std::endl;
 
+                it++;
+            }
+        }
+
+        os << "\n\toutputs:\n";
+
+        {
+            auto it = sm.output_map.begin();
+            while(it != sm.output_map.end()) {
+                os << "\t\t" << it->first << " <- " << it->second << std::endl;
+                it++;
+            }
+        }
+
+        os << "\n\tsignals:\n";
+
+        {
+            auto it = sm.signal_map.begin();
+            while(it != sm.signal_map.end()) {
+                os << "\t\t" << it->first << " ->\n";
+
+                auto str_vec = sm.split_colon_string(it->second);
+                for(auto& str : str_vec)
+                    os << "\t\t\t" << str << std::endl;
                 it++;
             }
         }

@@ -1,10 +1,40 @@
 <root>
+
+    <module name="OR3">
+        <gate type="OR" name="o1"/>
+        <gate type="OR" name="o2"/>
+
+        <signal from="o1" to="o2.A"/>
+
+        <input name="A" to="o1.A"/>
+        <input name="B" to="o1.B"/>
+        <input name="C" to="o2.B"/>
+
+        <output name="Y" from="o2"/>
+    </module>
+
+    <module name="combinational-xor">
+        <gate type="NAND" name="nand0"/>
+        <gate type="NAND" name="nand1"/>
+        <gate type="NAND" name="nand2"/>
+        <gate type="NAND" name="nand3"/>
+
+        <signal from="nand0" to="nand1.B:nand2.A"/>
+        <signal from="nand1" to="nand3.A"/>
+        <signal from="nand2" to="nand3.B"/>
+
+        <input name="A" to="nand1.A:nand0.A"/>
+        <input name="B" to="nand2.B:nand0.B"/>
+
+        <output name="Y" from="nand3"/>
+    </module>
+
     <module name="half-adder">
 
         <gate type="XOR" name="xor1"/>
         <gate type="AND" name="and1"/>
 
-        <!-- input signals can go to multiple destinations -->
+        <!-- inputs can go to multiple destinations -->
         <input name="A" to="and1.A:xor1.A"/>
         <input name="B" to="and1.B:xor1.B"/>
 

@@ -1,4 +1,6 @@
+<!-- doesnt matter what the root node is called -->
 <root>
+
     <module name="4-bit-adder">
 
         <!-- multiple instances of the same type of entity -->

@@ -79,7 +79,13 @@ void preprocess_simulator_files(std::string filename, std::ostream& os) {
             module.format_output(os, "    ");
         }
         else {
-            throw std::runtime_error("In file '" + filename + "', unknown tag '" + module.name() + "' caught during preprocessing phase");
+            stringstream ss;
+            module.format_output(ss);
+
+            throw std::runtime_error(
+                "In file '" + filename + "', unknown tag '" 
+                + module.name() + "' caught during preprocessing phase\n" 
+                + ss.str());
         }
 
         module = module.next();
