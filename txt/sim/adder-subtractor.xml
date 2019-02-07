@@ -1,5 +1,25 @@
 <root>
 
-    
+    <module name="adder-control">
 
+        <gate type="NOT" name="not0"/>
+        <gate type="NOR" name="nor0"/>
+        <gate type="AND" name="and0"/>
+        <gate type="AND" name="and1"/>
+        <gate type="OR" name="or0"/>
+
+        <signal from="not0" to="and0.A"/>
+        <signal from="nor0" to="and1.A"/>
+        <signal from="and0" to="or0.A"/>
+        <signal from="and1" to="or0.B"/>
+
+        <input name="ADD"     to="not0.A:nor0.A"/>
+        <input name="A-SUB-B" to="and0.B:nor0.B"/>
+        <input name="B-SUB-A" to="and1.B"/>
+
+        <output name="TO-CARRY-IN" from="or0"/>
+        <output name="TO-INVERT-A" from="and1"/>
+        <output name="TO-INVERT-B" from="and0"/>
+
+    </module>
 </root>
