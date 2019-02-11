@@ -29,7 +29,7 @@ public:
         if(_attr == NULL)
             return "";
         else
-            return this->_attr->value();
+            return std::string(this->_attr->value());
     }
 
     XmlAttribute next(void) {

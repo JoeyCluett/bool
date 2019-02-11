@@ -10,7 +10,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    cout << "Importing file..." << flush;
     StateRepresentation sr(argv[1]);
+    cout << "DONE\n" << flush;
+
     cout << sr << endl << endl;
 
     sr.rowReduce();

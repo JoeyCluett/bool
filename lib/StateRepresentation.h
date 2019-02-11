@@ -33,8 +33,40 @@ private:
             int z = 0; // moore output
             int z_if_zero; // mealy output 0
         };
+
         int z_if_one = 0;  // mealy output 1
+
+        machine_type type = machine_type::none;
+
+        friend std::ostream& operator<<(std::ostream& os, single_state_t& sst) {
+            os << "State: " << sst.current_state << ", Next state: (input = 0 : " << sst.next_if_zero << ", input = 1 : " << sst.next_if_one << ")";
+
+            if(sst.type == machine_type::mealy)
+                os << ", Output: (input = 0: " << sst.z_if_zero << ", input = 1: " << sst.z_if_one << ")\n";
+            else if(sst.type == machine_type::moore)
+                os << ", Output: " << sst.z << std::endl;
+            else
+                throw std::runtime_error("single_state_t operator<< : unknown state");
+
+            return os;
+        }
     };
+
+    bool states_equivalent(single_state_t& s1, single_state_t& s2) {
+        // regardless of machine type, these things must always 
+        // be equal for the states to be equivalent
+        if(!(s1.next_if_zero == s2.next_if_zero && s1.next_if_one == s2.next_if_one))
+            return false;
+
+        switch(this->type) {
+            case machine_type::mealy:
+                return ((s1.z_if_one == s2.z_if_one) && (s1.z_if_zero == s2.z_if_zero));
+            case machine_type::moore:
+                return (s1.z == s2.z);
+            default:
+                throw std::runtime_error("StateRepresentation states_equal : unknown machine type");
+        }
+    }
 
     std::vector<single_state_t> state_list;
     std::vector<std::pair<int, int>> global_alias_list;
@@ -57,9 +89,9 @@ private:
 
     auto split_next_state(std::string str) -> std::pair<int, int> {
         std::string first;
-        std::string second = "jk";
+        std::string second;
 
-        const int STATE_first_string = 0;
+        const int STATE_first_string  = 0;
         const int STATE_second_string = 1;
         int STATE_current = STATE_first_string;
 
@@ -95,7 +127,7 @@ private:
                 return i;
         }
 
-        throw std::runtime_error("StateRepresentation::index_of_state -> state not in state_list");
+        throw std::runtime_error("StateRepresentation index_of_state : state not in state_list");
     }
 
 public:
@@ -119,7 +151,7 @@ public:
                 << st.next_if_one << "  |  " << st.z << std::endl;
             }
             else if(sr.type == machine_type::mealy) {
-                os << st.current_state << "  |  " << st.next_if_zero "  "
+                os << st.current_state << "  |  " << st.next_if_zero << "  "
                 << st.next_if_one << "  |  " << st.z_if_zero << "  "
                 << st.z_if_one << std::endl;
             }
@@ -149,7 +181,7 @@ void StateRepresentation::rowReduce(void) {
         // will be populated if there are still aliased rows
         alias_list.clear();
 
-        if(this->type == machine_type::moore) {
+        //if(this->type == machine_type::moore) {
             auto& s_list = this->state_list;
 
             // iterate through the states
@@ -157,14 +189,17 @@ void StateRepresentation::rowReduce(void) {
                 // -1 is used as a sentinal value while iterating
                 std::pair<int, int> current_pair = {this->state_list[i].current_state, -1};
 
+                // inner search loop
                 for(int j = i; j < this->state_list.size(); j++) {
                     auto& s1 = s_list[i];
                     auto& s2 = s_list[j];
 
-                    if(s1.next_if_zero == s2.next_if_zero &&
-                            s1.next_if_one == s2.next_if_one &&
-                            s1.z == s2.z) {
-                        
+                    //if(s1.next_if_zero == s2.next_if_zero &&
+                    //        s1.next_if_one == s2.next_if_one &&
+                    //        s1.z == s2.z) {
+
+                    if(this->states_equivalent(s1, s2)) {
+
                         // basically, find every similar state pair 
                         // and save them for later
                         current_pair.second = s2.current_state;
@@ -209,10 +244,10 @@ void StateRepresentation::rowReduce(void) {
                         st.next_if_one = pr.first;
                 }
             }
-        }
-        else {
-            throw std::runtime_error("StateRepresentation::rowReduce -> only moore machines currently supported");
-        }
+        //}
+        //else {
+        //    throw std::runtime_error("StateRepresentation::rowReduce -> only moore machines currently supported");
+        //}
 
         for(auto pr : alias_list)
             this->global_alias_list.push_back(pr);
@@ -250,7 +285,12 @@ StateRepresentation::StateRepresentation(std::string input) {
 
     // now we have the root node taken care of (optional description)
     if(this->type == machine_type::moore) {
+        //std::cout << "Machine type: Moore\n" << std::flush;
+
         do {
+
+            //std::cout << "Node: "; current_node.format_output(std::cout) << std::endl << std::flush;
+            //std::cout << "  id : " << current_node.attr("id").value() << std::endl << std::flush;
 
             int id     = std::stoi(current_node.attr("id").value());
             auto trans = this->split_next_state(current_node.attr("transition").value());
@@ -260,7 +300,8 @@ StateRepresentation::StateRepresentation(std::string input) {
             s.current_state = id;
             s.next_if_zero = trans.first;
             s.next_if_one  = trans.second;
-            s.z = out;
+            s.z            = out;
+            s.type         = machine_type::moore;
 
             this->state_list.push_back(s);
 
@@ -270,8 +311,12 @@ StateRepresentation::StateRepresentation(std::string input) {
 
     }
     else { // machine type is mealy
+        //std::cout << "Machine type: Mealy\n" << std::flush;
 
         do {
+
+            //std::cout << "Node: "; current_node.format_output(std::cout) << std::endl << std::flush;
+            //std::cout << "  id : #" << current_node.attr("id").value() << "#\n" << std::flush;
 
             int id     = std::stoi(current_node.attr("id").value());
             auto trans = this->split_next_state(current_node.attr("transition").value());
@@ -284,6 +329,7 @@ StateRepresentation::StateRepresentation(std::string input) {
             s.next_if_one   = trans.second;
             s.z_if_zero     = out.first;
             s.z_if_one      = out.second;
+            s.type          = machine_type::mealy;
 
             this->state_list.push_back(s);
 
