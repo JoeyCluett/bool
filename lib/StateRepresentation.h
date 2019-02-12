@@ -22,6 +22,20 @@ private:
     machine_type type = machine_type::none;
     std::string description = "";
 
+public:
+    // combine the above info and return as a string
+    std::string info(void) {
+        std::string str = "Description: " + this->description;
+        str += "\nType: ";
+
+        switch(this->type) {
+            case machine_type::mealy: return str + "MEALY";
+            case machine_type::moore: return str + "MOORE";
+            default: return str + "NONE";
+        }
+    }
+
+private:
     // used internally to represent a single
     struct single_state_t {
         int current_state = 0;
@@ -82,8 +96,27 @@ private:
     }
 
     void verify_finished_node_list(void) {
-        // will verify there are no repeated states in 
-        // the list. not sure how im gonna implement this yet
+        // every state entry should only occur once: report repeated states
+        // every state needs to be positive: report negative states
+        auto l_sz = this->state_list.size();
+
+        for(int i = 0; i < l_sz; i++) {
+
+            if(this->state_list.at(i).current_state < 0)
+                throw std::runtime_error("State machine failed verification: "
+                    "state entries must have positive current state");
+
+            for(int j = i+1; j < l_sz; j++) {
+
+                single_state_t& si = this->state_list[i];
+                single_state_t& sj = this->state_list[j];
+
+                if(si.current_state == sj.current_state)
+                    throw std::runtime_error("State machine failed verification: "
+                    "current state entries must not be repeated");
+            }
+        }
+
         return;
     }
 
@@ -134,7 +167,7 @@ public:
     StateRepresentation(std::string input_file_name);
 
     friend std::ostream& operator<<(std::ostream& os, StateRepresentation& sr) {
-        os << "Description: " << sr.description << std::endl;
+        /*os << "Description: " << sr.description << std::endl;
         os << "Type: ";
         switch(sr.type) {
             case machine_type::mealy:
@@ -143,17 +176,39 @@ public:
                 os << "moore\n\n"; break;
             case machine_type::none:
                 os << "NONE\n\n"; break; // this should never happen
+        }*/
+
+        auto str5 = [](int i) -> std::string {
+            std::string s = std::to_string(i);
+            while(s.size() < 5)
+                s += ' ';
+            return s;
+        };
+
+        switch(sr.type) {
+            case machine_type::moore:
+                os << "Current state |  Next state   | Output\n";
+                os << "              |  x=0    x=1   |    z  \n";
+                os << "--------------+---------------+--------\n";
+                break;
+            case machine_type::mealy:
+                os << "Current state |  Next state   | Output\n";
+                os << "              |  x=0    x=1   | x=0    x=1\n";
+                os << "--------------+---------------+------------\n";
+                break;
+            default:
+                os << "NO STATES TO PRINT\n";
         }
 
         for(auto& st : sr.state_list) {
             if(sr.type == machine_type::moore) {
-                os << st.current_state << "  |  " << st.next_if_zero << "  "
-                << st.next_if_one << "  |  " << st.z << std::endl;
+                os << "      " << str5(st.current_state) << "   |   " << str5(st.next_if_zero) << "  "
+                << str5(st.next_if_one) << "|    " << str5(st.z) << std::endl;
             }
             else if(sr.type == machine_type::mealy) {
-                os << st.current_state << "  |  " << st.next_if_zero << "  "
-                << st.next_if_one << "  |  " << st.z_if_zero << "  "
-                << st.z_if_one << std::endl;
+                os << "      " << str5(st.current_state) << "   |   " << str5(st.next_if_zero) << "  "
+                << str5(st.next_if_one) << "|  " << str5(st.z_if_zero) << "  "
+                << str5(st.z_if_one) << std::endl;
             }
         }
 
@@ -339,4 +394,5 @@ StateRepresentation::StateRepresentation(std::string input) {
 
     }
 
+    this->verify_finished_node_list();
 }

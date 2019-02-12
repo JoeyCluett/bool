@@ -3,9 +3,8 @@
     desc="sample input file from 1-15-19 in Advanced Digital Design">
 
     <!-- transition="<x=0>:<x=1>" output="<output of current state>"-->
-    
-    <state id="1" transition="1:2" output="0"/>
     <state id="0" transition="1:4" output="0"/>
+    <state id="1" transition="1:2" output="0"/>
     <state id="2" transition="3:8" output="0"/>
     <state id="3" transition="1:6" output="1"/>
     <state id="4" transition="5:8" output="0"/>

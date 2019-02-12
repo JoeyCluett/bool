@@ -12,12 +12,17 @@ int main(int argc, char* argv[]) {
 
     cout << "Importing file..." << flush;
     StateRepresentation sr(argv[1]);
-    cout << "DONE\n" << flush;
+    cout << "DONE\n\n" << flush;
 
-    cout << sr << endl << endl;
+    cout << sr.info() << endl << endl;
 
+    cout << sr << endl;
+
+    cout << "Row reducing..." << flush;
     sr.rowReduce();
-    cout << sr << endl << endl;
+    cout << "DONE\n\n" << flush;
+
+    cout << sr << endl;
 
     return 0;
 }

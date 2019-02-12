@@ -99,6 +99,16 @@ private:
     std::map<std::string, std::string> output_map; // map<name, source>
 
 public:
+    // primarily used by signal evaluator
+    auto get_internal_map(std::string which_map) -> std::map<std::string, std::string>& {
+        if(which_map == "instance")
+            return this->instance_map;
+        else if(which_map == "signal")
+            return this->signal_map;
+
+        throw std::runtime_error("INTERNAL ERROR -> map type requested does not exist");
+    }
+
     // generates an internal representation of a given module
     SimulationModule(XmlNode n, std::map<std::string, SimulationModule*>& module_map) {
         
@@ -166,6 +176,9 @@ public:
                     this->gate_map.insert({_name + "." + it->first, it->second});
                     it++;
                 }
+
+                // at this point, _mod still holds the currently referenced module
+
             }
             else if(n.name() == "input") {
                 //std::cout << "found input in file...\n";
@@ -425,6 +438,40 @@ public:
             }
 
             n = n.next();
+        }
+
+        // fully qualify all signals inside each sub-module. this also 
+        // makes them available to any future parent modules
+        for(auto& mod : this->instance_map) {
+            auto instance_name = mod.first;
+            auto instance_type = mod.second;
+
+            std::map<std::string, std::string>* signal_map_ptr = NULL;
+
+            try {
+                // get the module from global module map
+                auto* mod_ptr = module_map.at(instance_type);
+                signal_map_ptr = &mod_ptr->get_internal_map("signal");
+            } 
+            catch(std::out_of_range& ex) {
+                throw std::runtime_error("SimulationModule -> when trying to evaluate "
+                "submodule signals, local module name '" + instance_type + "' not found in global module table");
+            }
+
+            // now we have the signal map. prepend the instance name to each entry (k,v)
+            for(auto& signal_kv : *signal_map_ptr) {
+                auto signal_name = instance_name + "." + signal_kv.first;
+
+                // set of signal destinations
+                auto signal_value_set = this->split_colon_string(signal_kv.second);
+                for(auto& str : signal_value_set)
+                    str = instance_name + "." + str;
+
+                // submodule signal names and destinations are now fully 
+                // qualified. place them in the parent module signal map
+                this->signal_map.insert({signal_name, combine_inputs(signal_value_set)});
+            }
+
         }
 
         // last step is to make this module available globally

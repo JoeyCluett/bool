@@ -1,34 +1,5 @@
 <root>
 
-    <module name="OR3">
-        <gate type="OR" name="o1"/>
-        <gate type="OR" name="o2"/>
-
-        <signal from="o1" to="o2.A"/>
-
-        <input name="A" to="o1.A"/>
-        <input name="B" to="o1.B"/>
-        <input name="C" to="o2.B"/>
-
-        <output name="Y" from="o2"/>
-    </module>
-
-    <module name="combinational-xor">
-        <gate type="NAND" name="nand0"/>
-        <gate type="NAND" name="nand1"/>
-        <gate type="NAND" name="nand2"/>
-        <gate type="NAND" name="nand3"/>
-
-        <signal from="nand0" to="nand1.B:nand2.A"/>
-        <signal from="nand1" to="nand3.A"/>
-        <signal from="nand2" to="nand3.B"/>
-
-        <input name="A" to="nand1.A:nand0.A"/>
-        <input name="B" to="nand2.B:nand0.B"/>
-
-        <output name="Y" from="nand3"/>
-    </module>
-
     <module name="half-adder">
 
         <gate type="XOR" name="xor1"/>
@@ -66,4 +37,30 @@
         <output name="CARRY-OUT" from="carry-or"/>
 
     </module>
+
+    <module name="4-bit-adder">
+
+        <!-- multiple instances of the same type of entity -->
+        <instance type="full-adder" name="bit0"/>
+        <instance type="full-adder" name="bit1"/>
+        <instance type="full-adder" name="bit2"/>
+        <instance type="full-adder" name="bit3"/>
+        
+        <!-- set all of those pesky carry bits -->
+        <signal from="bit0.CARRY-OUT" to="bit1.CARRY-IN"/>
+        <signal from="bit1.CARRY-OUT" to="bit2.CARRY-IN"/>
+        <signal from="bit2.CARRY-OUT" to="bit3.CARRY-IN"/>
+
+        <!-- arrays of input/output values -->
+        <inputvec size="4" name="A" to="bit0.A:bit1.A:bit2.A:bit3.A"/>
+        <inputvec size="4" name="B" to="bit0.B:bit1.B:bit2.B:bit3.B"/>
+
+        <outputvec size="4" name="SUM" from="bit0.SUM:bit1.SUM:bit2.SUM:bit3.SUM"/>
+
+        <!-- single bit carry in/out -->
+        <input name="CARRY-IN" to="bit0.CARRY-IN"/>
+        <output name="CARRY-OUT" from="bit3.CARRY-OUT"/>
+
+    </module>
+
 </root>

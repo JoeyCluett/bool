@@ -24,6 +24,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // global module map
     std::map<std::string, SimulationModule*> module_map;
 
     std::ofstream ofile("/tmp/jsimcompiler_input_file.xml");
@@ -55,9 +56,7 @@ int main(int argc, char* argv[]) {
     // print the details of the modules placed here
     auto it = module_map.begin();
     while(it != module_map.end()) {
-
         cout << *(it->second);
-
         it++;
     }
 
