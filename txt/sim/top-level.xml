@@ -1,5 +1,4 @@
 <root>
     <!-- you dont need to specify the .xml extension -->   
     <import name="adder-logic"/> 
-    <import name="logic-sim-sample"/>
 </root>

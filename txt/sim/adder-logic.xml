@@ -80,4 +80,25 @@
 
     </module>
 
+    <module name="32-bit-adder">
+
+        <instance type="8-bit-adder" name="llsb"/> <!-- least-least significant -->
+        <instance type="8-bit-adder" name="lmsb"/> <!-- least-most significant -->
+        <instance type="8-bit-adder" name="mlsb"/> <!-- most-least significant -->
+        <instance type="8-bit-adder" name="mmsb"/> <!-- most-most significant -->
+
+        <signal from="llsb.CARRY-OUT" to="lmsb.CARRY-IN"/>
+        <signal from="lmsb.CARRY-OUT" to="mlsb.CARRY-IN"/>
+        <signal from="mlsb.CARRY-OUT" to="mmsb.CARRY-IN"/>
+
+        <inputvec name="A" size="32" to="llsb.A:lmsb.A:mlsb.A:mmsb.A"/>
+        <inputvec name="B" size="32" to="llsb.B:lmsb.B:mlsb.B:mmsb.B"/>
+
+        <outputvec name="SUM" size="32" from="llsb.SUM:lmsb.SUM:mlsb.SUM:mmsb.SUM"/>
+
+        <input name="CARRY-IN" to="llsb.CARRY-IN"/>
+        <output name="CARRY-OUT" from="mmsb.CARRY-OUT"/>
+
+    </module>
+
 </root>

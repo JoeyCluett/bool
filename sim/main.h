@@ -154,6 +154,16 @@ public:
             os << "        <signal from=\"" << sig.first << "\" to=\"" << sig.second << "\"/>\n";
         }
 
+        // at this point, we no longer need instance tags for 
+        // anything as everything is fully evaluated during the compilation pass
+        for(auto& out : this->output_map) {
+            os << "        <output name=\"" << out.first << "\" from=\"" << out.second << "\"/>\n";
+        }
+
+        for(auto& in : this->input_map) {
+            os << "        <input name=\"" << in.first << "\" to=\"" << in.second << "\"/>\n";
+        }
+
         os << "    </module>\n";
         if(!has_root)
             os << "</root>\n";
@@ -293,66 +303,76 @@ public:
                 auto _from = n.attr("from").value();
                 auto _name = n.attr("name").value();
 
-                auto src = this->split_period_string(_from);
-                switch(src.size()) {
-                    case 1:
-                        // lowest level type
-                        break;
-                    case 2:
-                        {
-                            // search through lower level instance element
-                            //std::cout << "searching through lower level elements\n";
-                            auto instance_type = this->instance_map.find(src.at(0));
-                            if(instance_type != this->instance_map.end()) {
-                                auto module_ref = module_map.find(instance_type->second);
+                // try to find output source in gate map before trying the other stuff
 
-                                if(module_ref != module_map.end()) {
-                                    // we have the module representation 
-                                    // now. grab the output we need
-                                    try {
-                                        auto str = module_ref->second->get_output(src.at(1));
-                                        str = src.at(0) + "." + str;
-                                        _from = str; // _from should now be fully evaluated
-                                    } catch(std::out_of_range& ex) {
-                                        std::stringstream ss;
-                                        n.format_output(ss);
+                auto gate_iter = this->gate_map.find(_from);
+                if(gate_iter != this->gate_map.end())
+                    goto label_output_is_gate; // _from doesnt need to be modified
 
-                                        throw std::runtime_error("Error in module '" + this->module_name 
-                                            + "', node 'output': unable to find output '"
-                                            + src.at(1) + "' in external module '" + instance_type->second
-                                            + "'\nOffending node:\n    " + ss.str());
+                {
+                    auto src = this->split_period_string(_from);
+                    switch(src.size()) {
+                        case 1:
+                            // lowest level type
+                            break;
+                        case 2:
+                            {
+                                // search through lower level instance element
+                                //std::cout << "searching through lower level elements\n";
+                                auto instance_type = this->instance_map.find(src.at(0));
+                                if(instance_type != this->instance_map.end()) {
+                                    auto module_ref = module_map.find(instance_type->second);
+
+                                    if(module_ref != module_map.end()) {
+                                        // we have the module representation 
+                                        // now. grab the output we need
+                                        try {
+                                            auto str = module_ref->second->get_output(src.at(1));
+                                            str = src.at(0) + "." + str;
+                                            _from = str; // _from should now be fully evaluated
+                                        } catch(std::out_of_range& ex) {
+                                            std::stringstream ss;
+                                            n.format_output(ss);
+
+                                            throw std::runtime_error("Error in module '" + this->module_name 
+                                                + "', node 'output': unable to find output '"
+                                                + src.at(1) + "' in external module '" + instance_type->second
+                                                + "'\nOffending node:\n    " + ss.str());
+                                        }
+                                    }
+                                    else {
+                                        // this shouldnt ever happen and should be caught 
+                                        // by a different part of the program
+                                        throw std::runtime_error("Unable to find module of type '" +
+                                        instance_type->second + "' in global module map");
                                     }
                                 }
                                 else {
-                                    // this shouldnt ever happen and should be caught 
-                                    // by a different part of the program
-                                    throw std::runtime_error("Unable to find module of type '" +
-                                    instance_type->second + "' in global module map");
+                                    std::stringstream ss;
+                                    n.format_output(ss);
+
+                                    // using a port that doesnt exist
+                                    throw std::runtime_error("In module '" + this->module_name
+                                    + "' unable to find instance type of '" + src.at(0)
+                                    + "\n" + ss.str());
                                 }
                             }
-                            else {
+                            break;
+                        default:
+                            {
                                 std::stringstream ss;
                                 n.format_output(ss);
 
-                                // using a port that doesnt exist
-                                throw std::runtime_error("In module '" + this->module_name
-                                + "' unable to find instance type of '" + src.at(0)
-                                + "\n" + ss.str());
+                                throw std::runtime_error(
+                                    "In module '" + this->module_name + 
+                                    "' error found in 'output' node: 'from' attribute"
+                                    " has invalid number of period-seperated components\n"
+                                    + ss.str());
                             }
-                        }
-                        break;
-                    default:
-                        {
-                            std::stringstream ss;
-                            n.format_output(ss);
-
-                            throw std::runtime_error(
-                                "In module '" + this->module_name + 
-                                "' error found in 'output' node: 'from' attribute"
-                                " has invalid number of period-seperated components\n"
-                                + ss.str());
-                        }
+                    }
                 }
+
+        label_output_is_gate:
 
                 this->output_map.insert({_name, _from});
             }
@@ -369,75 +389,94 @@ public:
                 //std::cout << "  from -> " << _from << std::endl;
                 //std::cout << "  to   -> " << _to << std::endl;
 
+                // test if the source is an existing gate instance
+                // if it is, skip to the dest evaluation
+                {
+                    auto gate_iter = this->gate_map.find(_from);
+                    if(gate_iter != this->gate_map.end())
+                        // I KNOW I KNOW I KNOW
+                        goto signal_source_gate_finished; // _from doesnt need to be modified
+                }
+
                 // ==================================================
                 // fully qualify the source gate
-                auto src = this->split_period_string(_from);
 
-                switch(src.size()) {
-                    case 1:
-                        // already the lowest level element
-                        break;
-                    case 2:
-                        {
-                            // search through lower level instance element
-                            //std::cout << "searching through lower level elements\n";
-                            auto instance_type = this->instance_map.find(src.at(0));
-                            if(instance_type != this->instance_map.end()) {
-                                auto module_ref = module_map.find(instance_type->second);
+                try {
+                    auto src = this->split_period_string(_from);
+                    switch(src.size()) {
+                        case 1:
+                            // already the lowest level element
+                            break;
+                        case 2:
+                            {
+                                // search through lower level instance element
+                                //std::cout << "searching through lower level elements\n";
+                                auto instance_type = this->instance_map.find(src.at(0));
+                                if(instance_type != this->instance_map.end()) {
+                                    auto module_ref = module_map.find(instance_type->second);
 
-                                if(module_ref != module_map.end()) {
-                                    // we have the module representation 
-                                    // now. grab the output we need
-                                    try {
-                                        auto str = module_ref->second->get_output(src.at(1));
-                                        str = src.at(0) + "." + str;
-                                        _from = str; // _from should now be fully evaluated
-                                    } catch(std::out_of_range& ex) {
-                                        std::stringstream ss;
-                                        n.format_output(ss);
+                                    if(module_ref != module_map.end()) {
+                                        // we have the module representation 
+                                        // now. grab the output we need
+                                        try {
+                                            auto str = module_ref->second->get_output(src.at(1));
+                                            str = src.at(0) + "." + str;
+                                            _from = str; // _from should now be fully evaluated
+                                        } catch(std::out_of_range& ex) {
+                                            std::stringstream ss;
+                                            n.format_output(ss);
 
-                                        throw std::runtime_error("Error in module '" + this->module_name 
-                                            + "', node 'signal': unable to find output '"
-                                            + src.at(1) + "' in external module '" + instance_type->second
-                                            + "'\nOffending node:\n    " + ss.str());
+                                            throw std::runtime_error("Error in module '" + this->module_name 
+                                                + "', node 'signal': unable to find output '"
+                                                + src.at(1) + "' in external module '" + instance_type->second
+                                                + "'\nOffending node:\n    " + ss.str());
+                                        }
+                                    }
+                                    else {
+                                        // this shouldnt ever happen and should be caught 
+                                        // by a different part of the program
+                                        throw std::runtime_error("Unable to find module of type '" +
+                                        instance_type->second + "' in global module map");
                                     }
                                 }
                                 else {
-                                    // this shouldnt ever happen and should be caught 
-                                    // by a different part of the program
-                                    throw std::runtime_error("Unable to find module of type '" +
-                                    instance_type->second + "' in global module map");
+                                    std::stringstream ss;
+                                    n.format_output(ss);
+
+                                    // using a port that doesnt exist
+                                    throw std::runtime_error("In module '" + this->module_name
+                                    + "' unable to find instance type of '" + src.at(0)
+                                    + "\n" + ss.str());
                                 }
                             }
-                            else {
+                            break;
+                        default:
+                            {
                                 std::stringstream ss;
                                 n.format_output(ss);
 
-                                // using a port that doesnt exist
-                                throw std::runtime_error("In module '" + this->module_name
-                                + "' unable to find instance type of '" + src.at(0)
-                                + "\n" + ss.str());
+                                throw std::runtime_error(
+                                    "In module '" + this->module_name + 
+                                    "' error found in 'signal' node: 'from' attribute"
+                                    " has invalid number of period-seperated components\n"
+                                    + ss.str());
                             }
-                        }
-                        break;
-                    default:
-                        {
-                            std::stringstream ss;
-                            n.format_output(ss);
+                    }
 
-                            throw std::runtime_error(
-                                "In module '" + this->module_name + 
-                                "' error found in 'signal' node: 'from' attribute"
-                                " has invalid number of period-seperated components\n"
-                                + ss.str());
-                        }
                 }
+                catch(std::runtime_error& sre) {
+                    // if the above fails, use the entire 
+                    // source string to search for the target in the gate map
+                }
+
+        // dont want to use a goto but will if i need to
+        signal_source_gate_finished:
 
                 std::vector<std::string> to_dest_str;
 
                 // ==================================================
                 // fully qualify all of the dest gate ports
-                src = this->split_colon_string(_to);
+                auto src = this->split_colon_string(_to);
                 for(auto src_str : src) {
                     // now deal with each element individually
                     auto str = this->split_period_string(src_str);
