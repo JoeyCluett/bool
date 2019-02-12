@@ -23,7 +23,7 @@
         <gate     type="OR"         name="carry-or"/>
 
         <!-- signals must have only one source but can go to multiple dest -->
-        <signal from="lower-adder.SUM" to="upper-adder.B"/>
+        <signal from="lower-adder.SUM"  to="upper-adder.B"/>
         
         <!-- collect all of the carry signals -->
         <signal from="lower-adder.CARRY" to="carry-or.B"/>
@@ -60,6 +60,23 @@
         <!-- single bit carry in/out -->
         <input name="CARRY-IN" to="bit0.CARRY-IN"/>
         <output name="CARRY-OUT" from="bit3.CARRY-OUT"/>
+
+    </module>
+
+    <module name="8-bit-adder">
+
+        <instance type="4-bit-adder" name="lsb"/>
+        <instance type="4-bit-adder" name="msb"/>
+
+        <signal from="lsb.CARRY-OUT" to="msb.CARRY-IN"/>
+
+        <inputvec name="A" size="8" to="lsb.A:msb.A"/>
+        <inputvec name="B" size="8" to="lsb.B:msb.B"/>
+
+        <outputvec name="SUM" size="8" from="lsb.SUM:msb.SUM"/>
+
+        <input name="CARRY-IN" to="lsb.CARRY-IN"/>
+        <output name="CARRY-OUT" from="msb.CARRY-OUT"/>
 
     </module>
 

@@ -40,12 +40,38 @@ private:
         }
     }
 
+    // compatible with XML jsim configuration file
+    const char* logic_type_name_proper(logic_type lt) {
+        switch(lt) {
+            case logic_type::NONE:
+                return "NONE"; break;
+            case logic_type::OR:
+                return "OR"; break;
+            case logic_type::NOR:
+                return "NOR"; break;
+            case logic_type::AND:
+                return "AND"; break;
+            case logic_type::NAND:
+                return "NAND"; break;
+            case logic_type::XOR:
+                return "XOR"; break;
+            case logic_type::XNOR:
+                return "XNOR"; break;
+            case logic_type::NOT:
+                return "NOT"; break;
+            case logic_type::FLIPFLOP:
+                return "FLIP-FLOP"; break;
+            default:
+                throw std::runtime_error("Unknown logic_type");
+        }
+    }
+
     logic_type logic_type_from_str(std::string input) {
         const std::map<std::string, logic_type> logic_map = {
             {"OR", logic_type::OR},   {"NOR", logic_type::NOR}, 
             {"AND", logic_type::AND}, {"NAND", logic_type::NAND},
             {"XOR", logic_type::XOR}, {"XNOR", logic_type::XNOR},
-            {"NOT", logic_type::NOT}
+            {"NOT", logic_type::NOT}, {"FLIP-FLOP", logic_type::FLIPFLOP}
         };
 
         return logic_map.at(input);
@@ -99,6 +125,10 @@ private:
     std::map<std::string, std::string> output_map; // map<name, source>
 
 public:
+    // used by the xml generation utility to create 
+    //modules in the order they were internalized
+    static std::vector<std::string> global_ordered_module_list;
+
     // primarily used by signal evaluator
     auto get_internal_map(std::string which_map) -> std::map<std::string, std::string>& {
         if(which_map == "instance")
@@ -107,6 +137,26 @@ public:
             return this->signal_map;
 
         throw std::runtime_error("INTERNAL ERROR -> map type requested does not exist");
+    }
+
+    // write this top-level entity in compatible jsim XML format
+    void generate_xml_file(std::ostream& os, bool has_root = false) {
+        if(!has_root)
+            os << "<root>\n";
+        os << "    <module name=\"" << this->module_name << "\">\n";
+
+        for(auto& gate : this->gate_map) {
+            os << "        <gate name=\"" << gate.first << "\" type=\"" 
+                << logic_type_name_proper(gate.second) << "\"/>\n";
+        }
+
+        for(auto& sig : this->signal_map) {
+            os << "        <signal from=\"" << sig.first << "\" to=\"" << sig.second << "\"/>\n";
+        }
+
+        os << "    </module>\n";
+        if(!has_root)
+            os << "</root>\n";
     }
 
     // generates an internal representation of a given module
@@ -129,6 +179,9 @@ public:
         // jump to all of the child nodes
         n = n.child();
         while(!n.empty()) {
+
+            // for debugging purposes
+            //std::cout << n.name() << std::endl << std::flush;
 
             if(n.name() == "gate") {
                 //std::cout << "found logic gate in file...\n";
@@ -409,9 +462,9 @@ public:
                                 n.format_output(ss);
 
                                 throw std::runtime_error("error in module '"
-                                + this->module_name + "': output '" 
-                                + str.at(1) + "' of external module "
-                                "doesn't exist");
+                                + this->module_name + "' signal node: input '" 
+                                + str.at(1) + "' of external module '" + instance_type->second +
+                                "' doesn't exist\nOffending node:\n    " + ss.str());
                             }
                         }
                         else {
@@ -482,6 +535,7 @@ public:
         }
         else {
             module_map.insert({this->module_name, this});
+            this->global_ordered_module_list.push_back(this->module_name);
         }
     }
 
@@ -501,7 +555,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, SimulationModule& sm) {
         os << "module name: " << sm.module_name << std::endl;
-        os << "\n\tgates:\n";
+        os << "\n\tgates: " << sm.gate_map.size() << "\n";
 
         {
             auto it = sm.gate_map.begin();
@@ -536,7 +590,7 @@ public:
             }
         }
 
-        os << "\n\tsignals:\n";
+        os << "\n\tsignals: " << sm.signal_map.size() << "\n";
 
         {
             auto it = sm.signal_map.begin();
@@ -556,3 +610,5 @@ public:
     }
 
 };
+
+std::vector<std::string> SimulationModule::global_ordered_module_list;

@@ -21,37 +21,12 @@
 
     <module name="4-to-1-mux">
 
-        <instance type="2-to-1-mux" name="lower-left"/>
-        <instance type="2-to-1-mux" name="lower-right"/>
-        <instance type="2-to-1-mux" name="upper"/>
-
-        <signal from="lower-left.Y"  to="upper.A1"/>
-        <signal from="lower-right.Y" to="upper.A0"/>
-
-        <inputvec size="4" name="IN" 
-            to="lower-right.A0:lower-right.A1:lower-left.A0:lower-right.A1"/>
-        <inputvec size="2" name="SEL" 
-            to="(lower-left.SEL,lower-right.SEL):upper.SEL"/>
-
-        <output name="Y" from="upper.Y"/>
-
-    </module>
-
-    <module name="8-to-1-mux">
-
-        <instance type="4-to-1-mux" name="lower-left"/>
-        <instance type="4-to-1-mux" name="lower-right"/>
-        <instance type="2-to-1-mux" name="upper"/>
-
-        <signal from="lower-left.Y" to="upper.A1"/>
-        <signal from="lower-right.Y" to="upper.A0"/>
-
-        <inputvec size="8" name="IN"
-            to="lower-right.IN:lower-left.IN"/>
-
-        <!-- to="" is targeting mulitple sub-inputs of a nested instance -->
-        <inputvec size="3" name="SEL"
-            to="(lower-left.SEL[0],lower-right.SEL[0]):(lower-left.SEL[1],lower-right.SEL[1]):upper.SEL"/>
+        <gate type="AND" name="and0"/>
+        <gate type="AND" name="and1"/>
+        <gate type="AND" name="and2"/>
+        <gate type="AND" name="and3"/>
+        
+        
 
     </module>
 

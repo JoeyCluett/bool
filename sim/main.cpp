@@ -17,6 +17,11 @@ using namespace std;
 // evaluates all of the import statements in the simulator file
 void preprocess_simulator_files(std::string filename, std::ostream& os);
 
+// create an XML file with all defined modules
+void create_global_xml_configuration(
+        std::map<std::string, SimulationModule*>& module_map, 
+        std::string output_name);
+
 int main(int argc, char* argv[]) {
 
     if(argc != 2) {
@@ -60,7 +65,7 @@ int main(int argc, char* argv[]) {
         it++;
     }
 
-    //usleep(3000000);
+    create_global_xml_configuration(module_map, "auto-generated.xml");
 
     return 0;
 }
@@ -89,4 +94,20 @@ void preprocess_simulator_files(std::string filename, std::ostream& os) {
 
         module = module.next();
     }
+}
+
+void create_global_xml_configuration(
+        std::map<std::string, SimulationModule*>& module_map, std::string output_name) {
+
+    std::ofstream ofile(output_name);
+
+    ofile << "<root>\n";
+    //it->second->generate_xml_file(cout, true);
+    
+    for(auto& mod_name : SimulationModule::global_ordered_module_list)
+        module_map.at(mod_name)->generate_xml_file(ofile, true);
+
+    ofile << "</root>\n";
+
+    ofile.close();
 }
