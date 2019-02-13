@@ -77,7 +77,7 @@ private:
         return logic_map.at(input);
     }
 
-    // frequently need to split strings along colon seperators
+    // frequently need to split strings along certain tokens
     std::vector<std::string> split_string_by(std::string input, char c_delim) {
         std::vector<std::string> output;
         std::string build_string = "";
@@ -97,7 +97,49 @@ private:
     }
 
     auto split_colon_string(std::string input) -> std::vector<std::string> {
-        return split_string_by(input, ':');
+        //return split_string_by(input, ':');
+
+        // maintain backwards compatibility while adding paren functionality
+        std::vector<std::string> output;
+        std::string build_string = "";
+
+        const int state_default = 0;
+        const int state_multiple = 1;
+        int state_current = state_default;
+
+        for(char c : input) {
+            switch(state_current) {
+                case state_default:
+                    if(c == '(') {
+                        state_current = state_multiple;
+                    }
+                    else if(c == ':') {
+                        output.push_back(build_string);
+                        build_string.clear();
+                    }
+                    else {
+                        build_string.push_back(c);
+                    }
+                    break;
+                case state_multiple:
+                    if(c == ')') {
+                        output.push_back(build_string);
+                        build_string.clear();
+                        state_current = state_default;
+                    }
+                    else {
+                        build_string.push_back(c);
+                    }
+                    break;
+                default:
+                    throw std::runtime_error("split_colon_string : unknown error");
+            }
+        }
+
+        if(build_string.size() > 0)
+            output.push_back(build_string);
+
+        return output;
     }
 
     auto split_period_string(std::string input) -> std::vector<std::string> {
@@ -526,6 +568,12 @@ public:
                 }
 
                 this->signal_map.insert({_from, combine_inputs(to_dest_str)});
+
+            }
+            else if(n.name() == "inputvec") {
+
+            }
+            else if(n.name() == "outputvec") {
 
             }
 
