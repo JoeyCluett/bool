@@ -122,14 +122,10 @@ private:
                     }
                     break;
                 case state_multiple:
-                    if(c == ')') {
-                        output.push_back(build_string);
-                        build_string.clear();
+                    if(c == ')')
                         state_current = state_default;
-                    }
-                    else {
+                    else
                         build_string.push_back(c);
-                    }
                     break;
                 default:
                     throw std::runtime_error("split_colon_string : unknown error");
@@ -144,6 +140,27 @@ private:
 
     auto split_period_string(std::string input) -> std::vector<std::string> {
         return split_string_by(input, '.');
+    }
+
+    auto combine_inputs(std::vector<std::string> input) -> std::string {
+        std::string final_str = "";
+
+        auto svec = split_colon_string(input.at(0));
+        if(svec.size() > 1)
+            final_str += "(" + combine_inputs(svec) + ")";
+        else
+            final_str += input[0];
+
+        for(int i = 1; i < input.size(); i++) {
+            auto str = input[i];
+            svec = split_colon_string(str);
+            if(svec.size() > 1)
+                final_str += ":(" + combine_inputs(svec) + ")";
+            else
+                final_str += ":" + str;
+        }
+
+        return final_str;
     }
 
     // each logic gate in a given simulation is tracked 
@@ -165,6 +182,21 @@ private:
     // only things that are available to outside modules
     std::map<std::string, std::string> input_map;  // map<name, destination(s)>
     std::map<std::string, std::string> output_map; // map<name, source>
+
+    // inputvec types are stored here. sizes must be 
+    // compared everytime they are modified. the name 
+    // and size of each inputvec are stored in .first, 
+    //the content is stored in .second in a colon separated list
+    std::map<std::string, std::string> inputvec_map;  // map<(name:size), destination(s)>
+    std::map<std::string, std::string> outputvec_map; // map<(name:size), source(s)>
+
+    // lookuptable types are used to simplify many logic designs. 
+    // the lookuptable type is implemented as a string->string map
+    // map<name, pair<default, map<input, output>>>
+    // lut_size = lookuptable_map.at(name).second.size()
+    // lut_entries = lookuptable_map.at(name).second;
+    // lut_default = lookuptable_map.at(name).first;
+    std::map<std::string, std::pair<std::string, std::map<std::string, std::string>>> lookuptable_map;
 
 public:
     // used by the xml generation utility to create 
@@ -217,16 +249,35 @@ public:
         // the XmlNode passed as argument should already be a ready-to-go module
         this->module_name = n.attr("name").value();
 
-        auto combine_inputs = [](std::vector<std::string>& v) -> std::string {
-            std::string result = v.at(0);
+/*        auto combine_inputs = [&](std::vector<std::string>& v) -> std::string {
+            //std::string result = v.at(0);
+            //for(int i = 1; i < v.size(); i++) {
+            //    result.push_back(':');
+            //    result += v.at(i);
+            //}
+            //return result;
 
-            for(int i = 1; i < v.size(); i++) {
-                result.push_back(':');
-                result += v.at(i);
+            std::string final_str = "";
+
+            auto svec = split_colon_string(input.at(0));
+            if(svec.size() > 1)
+                final_str += "(" + combine_inputs(svec) + ")";
+            else
+                final_str += input[0];
+
+            for(int i = 1; i < input.size(); i++) {
+                auto str = input[i];
+                svec = split_colon_string(str);
+                if(svec.size() > 1)
+                    final_str += ":(" + combine_inputs(svec) + ")";
+                else
+                    final_str += ":" + str;
             }
 
-            return result;
-        };
+            return final_str;
+
+
+        };*/
 
         // jump to all of the child nodes
         n = n.child();
@@ -345,12 +396,25 @@ public:
                 auto _from = n.attr("from").value();
                 auto _name = n.attr("name").value();
 
+                //std::cout << "  from:" << _from << ", name:" << _name << std::endl;
+
                 // try to find output source in gate map before trying the other stuff
+                {
+                    auto gate_iter = this->gate_map.find(_from);
+                    if(gate_iter != this->gate_map.end())
+                        goto label_output_is_gate; // _from doesnt need to be modified
+                }
 
-                auto gate_iter = this->gate_map.find(_from);
-                if(gate_iter != this->gate_map.end())
-                    goto label_output_is_gate; // _from doesnt need to be modified
+                // try to find output source in lookup table map
+                {
+                    auto svec = this->split_period_string(_from);
+                    //std::cout << "  Searcing for lut entry '" << svec.at(0) << "'\n";
+                    auto lut_iter = this->lookuptable_map.find(svec.at(0));
+                    if(lut_iter != this->lookuptable_map.end())
+                        goto label_output_is_gate; // _from is fine
+                }
 
+                // try to find output source in instance map
                 {
                     auto src = this->split_period_string(_from);
                     switch(src.size()) {
@@ -396,7 +460,7 @@ public:
                                     // using a port that doesnt exist
                                     throw std::runtime_error("In module '" + this->module_name
                                     + "' unable to find instance type of '" + src.at(0)
-                                    + "\n" + ss.str());
+                                    + "'\n" + ss.str());
                                 }
                             }
                             break;
@@ -571,10 +635,76 @@ public:
 
             }
             else if(n.name() == "inputvec") {
+                //std::cout << "Found inputvec in file\n";
+
+                // every signal must have these attributes
+                n.hasAttrs({"name", "size", "to"}, true);
+                n.hasOnlyAttrs({"name", "size", "to"}, true);
+
+                auto _name = n.attr("name").value();
+                int  _size = std::stoi(n.attr("size").value());
+                auto _to   = n.attr("to").value();
+
 
             }
             else if(n.name() == "outputvec") {
+                //std::cout << "Found outputvec in file\n";
 
+                // every outputvec needs these things
+                n.hasAttrs({"name", "size", "from"}, true);
+                n.hasOnlyAttrs({"name", "size", "from"}, true);
+
+                auto _name = n.attr("name").value();
+                auto _from = n.attr("from").value();
+                int  _size = std::stoi(n.attr("size").value());
+
+                
+            }
+            else if(n.name() == "lookuptable") {
+                //std::cout << "Found lookuptable in file\n";
+
+                n.hasAttrs({"name", "inputsize", "outputsize", "default"}, true);
+                n.hasOnlyAttrs({"name", "inputsize", "outputsize", "default"}, true);
+
+                auto _name    = n.attr("name").value();
+                int  _isize   = std::stoi(n.attr("inputsize").value());
+                int  _osize   = std::stoi(n.attr("outputsize").value());
+                auto _default = n.attr("default").value();
+
+                // map<input, output>
+                std::map<std::string, std::string> tmp_lut_entry_map;
+
+                auto lut_child = n.child();
+                while(!lut_child.empty()) {
+
+                    if(lut_child.name() != "lutentry") {
+                        throw std::runtime_error(
+                                "In module '" + module_name + "' lookup table '" 
+                                + _name + "' has invalid child tag '" 
+                                + lut_child.name() + "'");
+                    }
+                    else {
+                        // entry name is good to go. find data for the lutentry
+                        lut_child.hasAttrs({"input", "output"});
+                        lut_child.hasOnlyAttrs({"input", "output"});
+
+                        auto _input  = lut_child.attr("input").value();
+                        auto _output = lut_child.attr("output").value();
+                    
+                        auto map_iter = tmp_lut_entry_map.find(_input);
+                        if(map_iter == tmp_lut_entry_map.end()) {
+                            tmp_lut_entry_map.insert({_input, _output});
+                        }
+                        else {
+                            throw std::runtime_error("error in module '" + module_name
+                            + "' lutentry tags must have unique input values");
+                        }
+                    }
+
+                    lut_child = lut_child.next();
+                }
+
+                this->lookuptable_map.insert({_name, {_default, tmp_lut_entry_map}});
             }
 
             n = n.next();
@@ -692,10 +822,8 @@ public:
         }
 
         os << "\n\n";
-
         return os;
     }
-
 };
 
 std::vector<std::string> SimulationModule::global_ordered_module_list;
