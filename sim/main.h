@@ -97,8 +97,6 @@ private:
     }
 
     auto split_colon_string(std::string input) -> std::vector<std::string> {
-        //return split_string_by(input, ':');
-
         // maintain backwards compatibility while adding paren functionality
         std::vector<std::string> output;
         std::string build_string = "";
@@ -248,36 +246,6 @@ public:
         
         // the XmlNode passed as argument should already be a ready-to-go module
         this->module_name = n.attr("name").value();
-
-/*        auto combine_inputs = [&](std::vector<std::string>& v) -> std::string {
-            //std::string result = v.at(0);
-            //for(int i = 1; i < v.size(); i++) {
-            //    result.push_back(':');
-            //    result += v.at(i);
-            //}
-            //return result;
-
-            std::string final_str = "";
-
-            auto svec = split_colon_string(input.at(0));
-            if(svec.size() > 1)
-                final_str += "(" + combine_inputs(svec) + ")";
-            else
-                final_str += input[0];
-
-            for(int i = 1; i < input.size(); i++) {
-                auto str = input[i];
-                svec = split_colon_string(str);
-                if(svec.size() > 1)
-                    final_str += ":(" + combine_inputs(svec) + ")";
-                else
-                    final_str += ":" + str;
-            }
-
-            return final_str;
-
-
-        };*/
 
         // jump to all of the child nodes
         n = n.child();
