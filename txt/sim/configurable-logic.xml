@@ -88,5 +88,4 @@
         <output name="Sum" from="my-lut.0"/>
         <output name="Co"  from="my-lut.1"/>
     </module>
-
 </root>

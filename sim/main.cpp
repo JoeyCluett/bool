@@ -8,9 +8,8 @@
 
 // the base logic simulator utility
 #include <standard_gates.h>
-
-// modules for simulation
-#include "main.h"
+#include <sim/SimulationModule.h>
+#include <sim/module_instance.h>
 
 using namespace std;
 
@@ -102,7 +101,6 @@ void create_global_xml_configuration(
     std::ofstream ofile(output_name);
 
     ofile << "<root>\n";
-    //it->second->generate_xml_file(cout, true);
     
     for(auto& mod_name : SimulationModule::global_ordered_module_list)
         module_map.at(mod_name)->generate_xml_file(ofile, true);

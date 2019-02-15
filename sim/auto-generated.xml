@@ -212,11 +212,11 @@
         <signal from="msb.bit3.x1" to="msb.bit3.a1.A"/>
         <signal from="msb.bit3.x2" to="msb.bit3.o1.A:msb.bit3.x1.A"/>
         <signal from="msb.bit3.x3" to="msb.bit3.o1.B:msb.bit3.x1.B"/>
-        <input name="ENABLE-OR" to="lsb.bit0.a0.A:lsb.bit1.a0.A:lsb.bit2.a0.A:lsb.bit3.a0.A:msb.bit0.a0.A:msb.bit1.a0.A:msb.bit2.a0.A:msb.bit3.a0.A"/>
-        <input name="ENABLE-XOR" to="lsb.bit0.a1.B:lsb.bit1.a1.B:lsb.bit2.a1.B:lsb.bit3.a1.B:msb.bit0.a1.B:msb.bit1.a1.B:msb.bit2.a1.B:msb.bit3.a1.B"/>
-        <input name="INVERT-A" to="lsb.bit0.x2.A:lsb.bit1.x2.A:lsb.bit2.x2.A:lsb.bit3.x2.A:msb.bit0.x2.A:msb.bit1.x2.A:msb.bit2.x2.A:msb.bit3.x2.A"/>
-        <input name="INVERT-B" to="lsb.bit0.x3.B:lsb.bit1.x3.B:lsb.bit2.x3.B:lsb.bit3.x3.B:msb.bit0.x3.B:msb.bit1.x3.B:msb.bit2.x3.B:msb.bit3.x3.B"/>
-        <input name="INVERT-Y" to="lsb.bit0.x0.A:lsb.bit1.x0.A:lsb.bit2.x0.A:lsb.bit3.x0.A:msb.bit0.x0.A:msb.bit1.x0.A:msb.bit2.x0.A:msb.bit3.x0.A"/>
+        <input name="ENABLE-OR"    to="lsb.bit0.a0.A:lsb.bit1.a0.A:lsb.bit2.a0.A:lsb.bit3.a0.A:msb.bit0.a0.A:msb.bit1.a0.A:msb.bit2.a0.A:msb.bit3.a0.A"/>
+        <input name="ENABLE-XOR"   to="lsb.bit0.a1.B:lsb.bit1.a1.B:lsb.bit2.a1.B:lsb.bit3.a1.B:msb.bit0.a1.B:msb.bit1.a1.B:msb.bit2.a1.B:msb.bit3.a1.B"/>
+        <input name="INVERT-A"     to="lsb.bit0.x2.A:lsb.bit1.x2.A:lsb.bit2.x2.A:lsb.bit3.x2.A:msb.bit0.x2.A:msb.bit1.x2.A:msb.bit2.x2.A:msb.bit3.x2.A"/>
+        <input name="INVERT-B"     to="lsb.bit0.x3.B:lsb.bit1.x3.B:lsb.bit2.x3.B:lsb.bit3.x3.B:msb.bit0.x3.B:msb.bit1.x3.B:msb.bit2.x3.B:msb.bit3.x3.B"/>
+        <input name="INVERT-Y"     to="lsb.bit0.x0.A:lsb.bit1.x0.A:lsb.bit2.x0.A:lsb.bit3.x0.A:msb.bit0.x0.A:msb.bit1.x0.A:msb.bit2.x0.A:msb.bit3.x0.A"/>
     </module>
     <module name="lut-example">
         <output name="Co" from="my-lut.0"/>

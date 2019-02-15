@@ -1,0 +1,32 @@
+
+// null-terminated string
+<module name> <\0>
+
+//  int           int            int           int           int           int             int           int
+<# or gates> <# nor gates> <# and gates> <# nand gates> <# xor gates> <# xnor gates> <# not gates> <# flipflops>
+
+// signal list. in this list, every signal has a single start and end point
+<# of signals>
+
+// for every signal:
+
+    //   byte           int            byte                int                 char
+    <source type> <source index> <destination type> <destination index> <destination port>
+
+    // format information
+    // source/destination type:
+        0 : or
+        1 : nor
+        2 : and
+        3 : nand
+        4 : xor
+        5 : xnor
+        6 : not
+        7 : flipflop
+
+    // destination port type:
+        0 : 'A'   // logic gate input
+        1 : 'B'   // --
+        2 : 'D'   // flip flop data input
+        3 : 'C'   // flip flop clock input
+
