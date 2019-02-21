@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <string.h>
 #include "SimulationModule.h"
 
 union gate_type_info_t {
@@ -28,6 +29,80 @@ union signal_info_t {
     } __attribute__((packed));
     char c_buf[11];
 };
+
+struct input_info_t {
+    struct input_dest_t {
+        uint8_t dest_type;
+        int     dest_index;
+        char    dest_port;
+    } __attribute__((packed));
+
+    std::vector<input_dest_t> dest_arr;
+};
+
+std::ostream& operator<<(std::ostream& os, signal_info_t& sit) {
+    switch(sit.src_type) {
+        case 0x00:
+            os << "OR"; break;
+        case 0x01:
+            os << "NOR"; break;
+        case 0x02:
+            os << "AND"; break;
+        case 0x03:
+            os << "NAND"; break;
+        case 0x04:
+            os << "XOR"; break;
+        case 0x05:
+            os << "XNOR"; break;
+        case 0x06:
+            os << "NOT"; break;
+        case 0x07:
+            os << "FlipFlop"; break;
+        default:
+            throw std::runtime_error("error in signal_info_t : unknown source type");
+    }
+
+    os << '[' << sit.src_index << "] ";
+
+    switch(sit.dest_type) {
+        case 0x00:
+            os << " ->  OR"; break;
+        case 0x01:
+            os << " ->  NOR"; break;
+        case 0x02:
+            os << " ->  AND"; break;
+        case 0x03:
+            os << " ->  NAND"; break;
+        case 0x04:
+            os << " ->  XOR"; break;
+        case 0x05:
+            os << " ->  XNOR"; break;
+        case 0x06:
+            os << " ->  NOT"; break;
+        case 0x07:
+            os << " ->  FlipFlop"; break;
+        default:
+            throw std::runtime_error("error in signal_info_t : unknown destination type");
+    }
+
+    os << '[' << sit.dest_index << ']';
+
+    switch(sit.dest_port) {
+        case 'A':
+        case 'B':
+            os << "." << sit.dest_port << std::endl; break;
+        case 'C':
+            os << ".Clk\n"; break;
+        case 'D':
+            os << ".Din\n"; break;
+        default:
+            throw std::runtime_error("error in signal_info_t : unknown destination port");
+    }
+
+    //os << "." << sit.dest_port << std::endl;
+
+    return os;
+}
 
 static void calculate_gate_indices(std::map<std::string, logic_type>& gate_map, std::map<std::string, int>& gate_index_map) {
     gate_type_info_t current_gate_indices;
@@ -74,11 +149,12 @@ static auto get_name_and_port(std::string str) -> std::pair<std::string, std::st
 
 void create_binary_module(SimulationModule* sm, std::string str) {
     std::ofstream ofile(str, std::ios::binary);
-    ofile.write(sm->get_module_name().c_str(), (long)sm->get_module_name().size());
-    
+
+    ofile.write(sm->get_module_name().c_str(), sm->get_module_name().size());
+
     {
         char c[1] = {0x00};
-        ofile.write(c, 0);
+        ofile.write(c, 1);
     }
 
     // clear this struct
@@ -153,10 +229,10 @@ void create_binary_module(SimulationModule* sm, std::string str) {
             sinfo.dest_index = gate_index_map.at(name_and_port.first);
 
             const std::map<std::string, char> port_name_map = {
-                {"A", 'a'},
-                {"B", 'b'},
-                {"D", 'd'},
-                {"Clk", 'c'}
+                {"A", 'A'},
+                {"B", 'B'},
+                {"D", 'D'},
+                {"Clk", 'C'}
             };
 
             sinfo.dest_port = port_name_map.at(name_and_port.second);
@@ -172,6 +248,16 @@ void create_binary_module(SimulationModule* sm, std::string str) {
 
     for(auto& sinfo : signal_vector)
         ofile.write(sinfo.c_buf, 11);
+
+    std::vector<input_info_t> input_vec;
+
+    auto& input_map = sm->get_internal_map("input");
+    for(auto& inp : input_map) {
+        input_info_t i_info;
+
+        auto& s_vec = SimulationModule::split_colon_string(inp.second);
+
+    }
 
     ofile.close();
 }

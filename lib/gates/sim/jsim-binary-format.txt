@@ -6,6 +6,8 @@
 <# or gates> <# nor gates> <# and gates> <# nand gates> <# xor gates> <# xnor gates> <# not gates> <# flipflops>
 
 // signal list. in this list, every signal has a single start and end point
+
+//   int
 <# of signals>
 
 // for every signal:
@@ -30,3 +32,19 @@
         2 : 'D'   // flip flop data input
         3 : 'C'   // flip flop clock input
 
+// input list. every input goes to one or more places
+
+//   int
+<# of inputs>
+
+// for every input
+    //        int                       
+    <number of destinations> 
+    
+    //     byte                 int                  char
+    <destination type 1> <destination index 1> <destination port 1> 
+
+    // ...
+
+    //     byte                 int                  char
+    <destination type n> <destination index n> <destination port n>

@@ -134,7 +134,7 @@ struct logic_element_t {
     // inputs. this allows for feedback loops. this is 
     // also where the magic of simulation happens
     // returns true if state of gate changed. this allows 
-    //the simulator to find a steady state automatically
+    // the simulator to find a steady state automatically
     virtual bool_t evaluate(void) { return false; };
 
     // this method called at the end of a simulation cycle. 

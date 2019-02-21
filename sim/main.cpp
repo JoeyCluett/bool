@@ -10,6 +10,7 @@
 #include <standard_gates.h>
 #include <sim/SimulationModule.h>
 #include <sim/module_instance.h>
+#include <sim/binary_format.h>
 
 using namespace std;
 
@@ -64,7 +65,11 @@ int main(int argc, char* argv[]) {
         it++;
     }
 
-    create_global_xml_configuration(module_map, "auto-generated.xml");
+    create_global_xml_configuration(module_map, "/tmp/auto-generated-jsim.xml");
+
+    // create packed binary formats of every module that was created
+    for(auto& mod : module_map)
+        create_binary_module(mod.second, "/tmp/" + mod.second->get_module_name() + ".jsim");
 
     return 0;
 }

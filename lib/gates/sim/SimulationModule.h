@@ -79,7 +79,7 @@ private:
 
 public:
     // frequently need to split strings along certain tokens
-    std::vector<std::string> split_string_by(std::string input, char c_delim) {
+    static std::vector<std::string> split_string_by(std::string input, char c_delim) {
         std::vector<std::string> output;
         std::string build_string = "";
 
@@ -136,11 +136,42 @@ public:
     }
 
     static auto split_period_string(std::string input) -> std::vector<std::string> {
-        return SimulationModule::split_string_by(input, '.');
+        return split_string_by(input, '.');
+    }
+
+    static auto split_config_string(std::string input) -> std::vector<std::vector<std::string>> {
+        std::vector<std::vector<std::string>> ret_obj;
+
+        auto s_vec = split_colon_string(input);
+        for(auto& str : s_vec)
+            ret_obj.push_back(split_colon_string(str));
+
+        return ret_obj;
+    }
+
+    static auto combine_config_string(std::vector<std::vector<std::string>>& config_mat) -> std::string {
+        std::string final_string;
+        bool start = true;
+
+        for(auto& s_vec : config_mat) {
+            if(!start) final_string.push_back(':');
+
+            if(s_vec.size() > 1) {
+                final_string.push_back('(');
+                final_string += s_vec.at(0);
+                for(int i = 1; i < s_vec.size(); i++) final_string += (":" + s_vec[i]);
+                final_string.push_back(')');
+            }
+            else
+                final_string += s_vec.at(0);
+            start = false;
+        }
+
+        return final_string;
     }
 
 private:
-    auto combine_inputs(std::vector<std::string> input) -> std::string {
+    auto combine_inputs(std::vector<std::string>& input) -> std::string {
         std::string final_str = "";
 
         auto svec = split_colon_string(input.at(0));
@@ -207,12 +238,12 @@ public:
             return this->instance_map;
         else if(which_map == "signal")
             return this->signal_map;
+        else if(which_map == "input")
+            return this->input_map;
+        else if(which_map == "output")
+            return this->output_map;
 
         throw std::runtime_error("INTERNAL ERROR -> map type requested does not exist");
-    }
-
-    auto get_gate_map(void) -> std::map<std::string, logic_type>& {
-        return this->gate_map;
     }
 
     // write this top-level entity in compatible jsim XML format
