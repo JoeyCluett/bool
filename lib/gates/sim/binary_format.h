@@ -30,15 +30,134 @@ union signal_info_t {
     char c_buf[11];
 };
 
-struct input_info_t {
-    struct input_dest_t {
+union input_dest_t {
+    struct {
         uint8_t dest_type;
         int     dest_index;
         char    dest_port;
     } __attribute__((packed));
+    char c_buf[6];
+};
 
+struct input_info_t {
+    std::string input_name;
     std::vector<input_dest_t> dest_arr;
 };
+
+union output_source_t {
+
+    struct {
+        u_int8_t src_type;
+        int      src_index;
+    } __attribute__((packed));
+
+    char c_buf[5];
+};
+
+struct output_info_t {
+    std::string output_name;
+    output_source_t output_source;
+};
+
+std::ostream& operator<<(std::ostream& os, output_source_t& ost) {
+
+    os << "  <-  ";
+
+    switch(ost.src_type) {
+        case 0x00:
+            os << "OR"; break;
+        case 0x01:
+            os << "NOR"; break;
+        case 0x02:
+            os << "AND"; break;
+        case 0x03:
+            os << "NAND"; break;
+        case 0x04:
+            os << "XOR"; break;
+        case 0x05:
+            os << "XNOR"; break;
+        case 0x06:
+            os << "NOT"; break;
+        case 0x07:
+            os << "FlipFlop"; break;
+        default:
+            throw std::runtime_error("error in output_source_t : unknown destination type");
+    }
+
+    os << '[' << ost.src_index << "]\n";
+
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, output_info_t& oit) {
+
+    os << oit.output_name << "  <-  ";
+
+    switch(oit.output_source.src_type) {
+        case 0x00:
+            os << "OR"; break;
+        case 0x01:
+            os << "NOR"; break;
+        case 0x02:
+            os << "AND"; break;
+        case 0x03:
+            os << "NAND"; break;
+        case 0x04:
+            os << "XOR"; break;
+        case 0x05:
+            os << "XNOR"; break;
+        case 0x06:
+            os << "NOT"; break;
+        case 0x07:
+            os << "FlipFlop"; break;
+        default:
+            throw std::runtime_error("error in output_info_t : unknown destination type");
+    }
+
+    os << '[' << oit.output_source.src_index << "]\n";
+
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, input_dest_t& idt) {
+
+    switch(idt.dest_type) {
+        case 0x00:
+            os << "OR"; break;
+        case 0x01:
+            os << "NOR"; break;
+        case 0x02:
+            os << "AND"; break;
+        case 0x03:
+            os << "NAND"; break;
+        case 0x04:
+            os << "XOR"; break;
+        case 0x05:
+            os << "XNOR"; break;
+        case 0x06:
+            os << "NOT"; break;
+        case 0x07:
+            os << "FlipFlop"; break;
+        default:
+            throw std::runtime_error("error in input_type_t : unknown destination type");
+    }
+
+    os << '[' << idt.dest_index << "]";
+
+    switch(idt.dest_port) {
+        case 'A':
+        case 'B':
+            os << "." << idt.dest_port << std::endl; break;
+        case 'C':
+            os << ".Clk\n"; break;
+        case 'D':
+            os << ".Din\n"; break;
+        default:
+            throw std::runtime_error("error in signal_info_t : unknown destination port");
+    }
+
+    return os;
+}
 
 std::ostream& operator<<(std::ostream& os, signal_info_t& sit) {
     switch(sit.src_type) {
@@ -232,6 +351,7 @@ void create_binary_module(SimulationModule* sm, std::string str) {
                 {"A", 'A'},
                 {"B", 'B'},
                 {"D", 'D'},
+                {"Din", 'D'},
                 {"Clk", 'C'}
             };
 
@@ -243,8 +363,10 @@ void create_binary_module(SimulationModule* sm, std::string str) {
 
     }
 
-    size_t sz = signal_vector.size();
-    ofile.write((char*)&sz, 4);
+    {
+        size_t sz = signal_vector.size();
+        ofile.write((char*)&sz, 4);
+    }
 
     for(auto& sinfo : signal_vector)
         ofile.write(sinfo.c_buf, 11);
@@ -252,11 +374,80 @@ void create_binary_module(SimulationModule* sm, std::string str) {
     std::vector<input_info_t> input_vec;
 
     auto& input_map = sm->get_internal_map("input");
+
+    // save the number of inputs
+    {
+        size_t sz = input_map.size();
+        ofile.write((char*)&sz, 4);
+    }
+
+    // for every input in the module
     for(auto& inp : input_map) {
         input_info_t i_info;
+        auto s_vec = SimulationModule::split_colon_string(inp.second);
 
-        auto& s_vec = SimulationModule::split_colon_string(inp.second);
+        i_info.input_name = inp.first;
 
+        for(auto str : s_vec) {
+            input_dest_t input_dest;
+            auto name_and_port = ::get_name_and_port(str);
+
+            const std::map<std::string, char> port_name_map = {
+                {"A", 'A'},
+                {"B", 'B'},
+                {"D", 'D'},
+                {"Din", 'D'},
+                {"Clk", 'C'}
+            };
+
+            // for now, assume everything is a logic gate
+            input_dest.dest_type  = get_logic_type_of(gate_map.at(name_and_port.first));
+            input_dest.dest_index = gate_index_map.at(name_and_port.first);
+            input_dest.dest_port  = port_name_map.at(name_and_port.second);
+
+            i_info.dest_arr.push_back(input_dest);
+        }
+
+        input_vec.push_back(i_info);
+    }
+
+    // place all of the inputs in the binary file
+    for(auto& inp : input_vec) {
+        // input name comes first
+        ofile.write(inp.input_name.c_str(), inp.input_name.size()+1);
+    
+        // number of destination ports this input targets
+        size_t sz = inp.dest_arr.size();
+        ofile.write((char*)&sz, 4);
+
+        // write every destination
+        for(auto& in_dest : inp.dest_arr)
+            ofile.write(in_dest.c_buf, 6);
+    }
+
+    // pack all of the outputs
+    std::vector<output_info_t> output_vec;
+    auto& output_map = sm->get_internal_map("output");
+    for(auto& outp : output_map) {
+        output_info_t output_info;
+
+        output_info.output_name = outp.first;
+        output_info.output_source.src_type = get_logic_type_of(gate_map.at(outp.second));
+        output_info.output_source.src_index = gate_index_map.at(outp.second);
+
+        output_vec.push_back(output_info);
+    }
+
+    // number of outputs we have
+    {
+        size_t sz = output_vec.size();
+        ofile.write((char*)&sz, 4);
+    }
+
+    // write output information to binary file
+    for(auto& oinfo : output_vec) {
+        ofile.write(oinfo.output_name.c_str(), oinfo.output_name.size()+1);
+        ofile.write(oinfo.output_source.c_buf, 5);
     }
 
     ofile.close();

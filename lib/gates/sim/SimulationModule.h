@@ -71,7 +71,8 @@ private:
             {"OR", logic_type::OR},   {"NOR", logic_type::NOR}, 
             {"AND", logic_type::AND}, {"NAND", logic_type::NAND},
             {"XOR", logic_type::XOR}, {"XNOR", logic_type::XNOR},
-            {"NOT", logic_type::NOT}, {"FLIP-FLOP", logic_type::FLIPFLOP}
+            {"NOT", logic_type::NOT}, {"FLIP-FLOP", logic_type::FLIPFLOP},
+            {"FLIPFLOP", logic_type::FLIPFLOP}
         };
 
         return logic_map.at(input);
