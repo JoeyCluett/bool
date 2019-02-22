@@ -10,6 +10,6 @@ files=( `ls` )
 for f in "${files[@]}"; do
     if [ ! $f = "install.sh" ]; then
         # overwrite it if ti exists
-        mv $f /tmp/jsimfiles/$f
+        cp $f /tmp/jsimfiles/$f
     fi
 done
