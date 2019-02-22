@@ -38,13 +38,39 @@
 
     </module>
 
-    <module name="4-bit-adder">
+    <module name="full-arithmetic">
+        <instance type="full-adder" name="adder"/>
+
+        <gate type="XOR" name="invert-A"/>
+        <gate type="XOR" name="invert-B"/>
+        <gate type="XOR" name="invert-sum"/>
+
+        <signal from="invert-A"  to="adder.A"/>
+        <signal from="invert-B"  to="adder.B"/>
+        <signal from="adder.SUM" to="invert-sum.A"/>
+
+        <!-- inputs to invert various inputs and outputs -->
+        <input name="INVERT-SUM" to="invert-sum.B"/>
+        <input name="INVERT-A"   to="invert-A.B"/>
+        <input name="INVERT-B"   to="invert-B.B"/>
+
+        <!-- data going through the arithmetic unit -->
+        <input name="A"        to="invert-A.A"/>
+        <input name="B"        to="invert-B.A"/>
+        <input name="CARRY-IN" to="adder.CARRY-IN"/>
+
+        <output name="CARRY-OUT" from="adder.CARRY-OUT"/>
+        <output name="SUM"       from="adder.SUM"/>
+
+    </module>
+
+    <module name="4-bit-arithmetic-unit">
 
         <!-- multiple instances of the same type of entity -->
-        <instance type="full-adder" name="bit0"/>
-        <instance type="full-adder" name="bit1"/>
-        <instance type="full-adder" name="bit2"/>
-        <instance type="full-adder" name="bit3"/>
+        <instance type="full-arithmetic" name="bit0"/>
+        <instance type="full-arithmetic" name="bit1"/>
+        <instance type="full-arithmetic" name="bit2"/>
+        <instance type="full-arithmetic" name="bit3"/>
         
         <!-- set all of those pesky carry bits -->
         <signal from="bit0.CARRY-OUT" to="bit1.CARRY-IN"/>
@@ -58,46 +84,36 @@
         <outputvec size="4" name="SUM" from="bit0.SUM:bit1.SUM:bit2.SUM:bit3.SUM"/>
 
         <!-- single bit carry in/out -->
-        <input name="CARRY-IN" to="bit0.CARRY-IN"/>
+        <input  name="CARRY-IN" to="bit0.CARRY-IN"/>
         <output name="CARRY-OUT" from="bit3.CARRY-OUT"/>
+
+        <!-- 3 control lines -->
+        <input name="INVERT-A"   to="bit0.INVERT-A:bit1.INVERT-A:bit2.INVERT-A:bit3.INVERT-A"/>
+        <input name="INVERT-B"   to="bit0.INVERT-B:bit1.INVERT-B:bit2.INVERT-B:bit3.INVERT-B"/>
+        <input name="INVERT-SUM" to="bit0.INVERT-SUM:bit1.INVERT-SUM:bit2.INVERT-SUM:bit3.INVERT-SUM"/>
 
     </module>
 
-    <module name="8-bit-adder">
+    <module name="8-bit-arithmetic-unit">
 
-        <instance type="4-bit-adder" name="lsb"/>
-        <instance type="4-bit-adder" name="msb"/>
+        <instance type="4-bit-arithmetic-unit" name="lsb"/>
+        <instance type="4-bit-arithmetic-unit" name="msb"/>
 
         <signal from="lsb.CARRY-OUT" to="msb.CARRY-IN"/>
 
-        <inputvec name="A" size="8" to="lsb.A:msb.A"/>
-        <inputvec name="B" size="8" to="lsb.B:msb.B"/>
+        <!-- data input and output -->
+        <inputvec size="8" name="A" to="lsb.A:msb.A"/>
+        <inputvec size="8" name="B" to="lsb.B:msb.B"/>
+        <outputvec size="8" name="SUM" from="lsb.SUM:msb.SUM"/>
 
-        <outputvec name="SUM" size="8" from="lsb.SUM:msb.SUM"/>
-
+        <!-- carry in and carry out -->
         <input name="CARRY-IN" to="lsb.CARRY-IN"/>
         <output name="CARRY-OUT" from="msb.CARRY-OUT"/>
 
-    </module>
-
-    <module name="32-bit-adder">
-
-        <instance type="8-bit-adder" name="llsb"/> <!-- least-least significant -->
-        <instance type="8-bit-adder" name="lmsb"/> <!-- least-most significant -->
-        <instance type="8-bit-adder" name="mlsb"/> <!-- most-least significant -->
-        <instance type="8-bit-adder" name="mmsb"/> <!-- most-most significant -->
-
-        <signal from="llsb.CARRY-OUT" to="lmsb.CARRY-IN"/>
-        <signal from="lmsb.CARRY-OUT" to="mlsb.CARRY-IN"/>
-        <signal from="mlsb.CARRY-OUT" to="mmsb.CARRY-IN"/>
-
-        <inputvec name="A" size="32" to="llsb.A:lmsb.A:mlsb.A:mmsb.A"/>
-        <inputvec name="B" size="32" to="llsb.B:lmsb.B:mlsb.B:mmsb.B"/>
-
-        <outputvec name="SUM" size="32" from="llsb.SUM:lmsb.SUM:mlsb.SUM:mmsb.SUM"/>
-
-        <input name="CARRY-IN" to="llsb.CARRY-IN"/>
-        <output name="CARRY-OUT" from="mmsb.CARRY-OUT"/>
+        <!-- control line inputs -->
+        <input name="INVERT-A"   to="lsb.INVERT-A:msb.INVERT-A"/>
+        <input name="INVERT-B"   to="lsb.INVERT-B:msb.INVERT-B"/>
+        <input name="INVERT-SUM" to="lsb.INVERT-SUM:msb.INVERT-SUM"/>
 
     </module>
 

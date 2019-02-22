@@ -9,7 +9,7 @@ fi
 files=( `ls` )
 for f in "${files[@]}"; do
     if [ ! $f = "install.sh" ]; then
-        # overwrite it if ti exists
+        # overwrite it if it exists
         cp $f /tmp/jsimfiles/$f
     fi
 done
