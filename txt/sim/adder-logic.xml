@@ -1,5 +1,7 @@
 <root>
 
+    <import name="alu-util"/>
+
     <module name="half-adder">
 
         <gate type="XOR" name="xor1"/>
@@ -77,15 +79,19 @@
         <signal from="bit1.CARRY-OUT" to="bit2.CARRY-IN"/>
         <signal from="bit2.CARRY-OUT" to="bit3.CARRY-IN"/>
 
-        <!-- arrays of input/output values -->
-        <inputvec size="4" name="A" to="bit0.A:bit1.A:bit2.A:bit3.A"/>
-        <inputvec size="4" name="B" to="bit0.B:bit1.B:bit2.B:bit3.B"/>
+        <!-- collect bits for the zero output -->
+        <instance type="or-4" name="zero-or"/>
+        <signalvec from="bit0.SUM:bit1.SUM:bit2.SUM:bit3.SUM" to="zero-or.A"/>
 
+        <!-- arrays of input/output values -->
+        <inputvec size="4"  name="A"   to="bit0.A:bit1.A:bit2.A:bit3.A"/>
+        <inputvec size="4"  name="B"   to="bit0.B:bit1.B:bit2.B:bit3.B"/>
         <outputvec size="4" name="SUM" from="bit0.SUM:bit1.SUM:bit2.SUM:bit3.SUM"/>
 
         <!-- single bit carry in/out -->
-        <input  name="CARRY-IN" to="bit0.CARRY-IN"/>
+        <input  name="CARRY-IN"  to="bit0.CARRY-IN"/>
         <output name="CARRY-OUT" from="bit3.CARRY-OUT"/>
+        <output name="ZERO"      from="zero-or.Y"/>
 
         <!-- 3 control lines -->
         <input name="INVERT-A"   to="bit0.INVERT-A:bit1.INVERT-A:bit2.INVERT-A:bit3.INVERT-A"/>
@@ -101,6 +107,8 @@
 
         <signal from="lsb.CARRY-OUT" to="msb.CARRY-IN"/>
 
+        <gate type="NOR" name="zero-nor"/>
+
         <!-- data input and output -->
         <inputvec size="8" name="A" to="lsb.A:msb.A"/>
         <inputvec size="8" name="B" to="lsb.B:msb.B"/>
@@ -114,6 +122,36 @@
         <input name="INVERT-A"   to="lsb.INVERT-A:msb.INVERT-A"/>
         <input name="INVERT-B"   to="lsb.INVERT-B:msb.INVERT-B"/>
         <input name="INVERT-SUM" to="lsb.INVERT-SUM:msb.INVERT-SUM"/>
+
+    </module>
+
+    <module name="registered-8-bit-arithmetic-unit">
+
+        <instance type="8-bit-arithmetic-unit" name="arith"/>
+        <instance type="8-bit-register"        name="reg-a"/>
+        <instance type="8-bit-register"        name="reg-b"/>
+        <instance type="8-bit-register"        name="accum"/>
+
+        <signalvec size="8" from="arith.SUM" to="accum.Din"/>
+        <signalvec size="8" from="reg-a.Q" to="arith.A"/>
+        <signalvec size="8" from="reg-b.Q" to="arith.B"/>
+
+        <!-- control signals for various registers in arithmetic unit. there are 
+            quite a few and there are several more in the logic unit -->
+        <input name="Clk"          to="accum.Clk:reg-a.Clk:reg-b.Clk"/>
+        <input name="Reset"        to="accum.Reset:reg-a.Reset:reg-b.Reset"/>
+        <input name="Enable-Accum" to="accum.Enable"/>
+        <input name="Enable-Reg-A" to="reg-a.Enable"/>
+        <input name="Enable-Reg-B" to="reg-b.Enable"/>
+
+        <!-- behavioral configuration inputs for arithmetic functionality -->
+        <input name="CARRY-IN"   to="arith.CARRY-IN"/>
+        <input name="INVERT-A"   to="arith.INVERT-A"/>
+        <input name="INVERT-B"   to="arith.INVERT-B"/>
+        <input name="INVERT-SUM" to="arith.INVERT-SUM"/>
+
+        <!-- single bit outputs -->
+        <output name="Zero" from=""/>
 
     </module>
 

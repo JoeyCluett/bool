@@ -1,0 +1,139 @@
+<root>
+    
+    <module name="or-4">
+
+        <gate type="OR" name="left"/>
+        <gate type="OR" name="right"/>
+        <gate type="OR" name="top"/>
+
+        <signal from="left"  to="top.A"/>
+        <signal from="right" to="top.B"/>
+
+        <output name="Y" from="top"/>
+        <inputvec name="A" size="4" to="left.A:left.B:right.A:right.B"/>
+
+    </module>
+
+    <module name="8-bit-select">
+
+        <gate type="AND" name="a"/>
+        <gate type="AND" name="b"/>
+        <gate type="AND" name="c"/>
+        <gate type="AND" name="d"/>
+        <gate type="AND" name="e"/>
+        <gate type="AND" name="f"/>
+        <gate type="AND" name="g"/>
+        <gate type="AND" name="h"/>
+
+        <outputvec name="OUTPUT" size="8" from="a:b:c:d:e:f:g:h"/>
+        <inputvec  name="INPUT"  size="8" to="a.A:b.A:c.A:d.A:e.A:f.A:g.A:h.A"/>
+        <input     name="SELECT"          to="a.B:b.B:c.B:d.B:e.B:f.B:g.B:h.B"/>
+
+    </module>
+
+    <module name="or-array">
+        
+        <gate type="OR" name="a"/>
+        <gate type="OR" name="b"/>
+        <gate type="OR" name="c"/>
+        <gate type="OR" name="d"/>
+        <gate type="OR" name="e"/>
+        <gate type="OR" name="f"/>
+        <gate type="OR" name="g"/>
+        <gate type="OR" name="h"/>
+
+        <inputvec  name="A" size="8" to="a.A:b.A:c.A:d.A:e.A:f.A:g.A:h.A"/>
+        <inputvec  name="B" size="8" to="a.B:b.B:c.B:d.B:e.B:f.B:g.B:h.B"/>
+        <outputvec name="Y" size="8" from="a:b:c:d:e:f:g:h"/>
+    
+    </module>
+
+    <module name="8-bit-demux">
+
+        <instance type="8-bit-select" name="y0"/>
+        <instance type="8-bit-select" name="y1"/>
+        <gate type="NOT" name="n"/>
+
+        <signal from="n" to="y0.SELECT"/>
+
+        <inputvec name="IN" to="(y0.INPUT.0:y1.INPUT.0):(y0.INPUT.1:y1.INPUT.1):(y0.INPUT.2:y1.INPUT.2):(y0.INPUT.3:y1.INPUT.3):(y0.INPUT.4:y1.INPUT.4):(y0.INPUT.5:y1.INPUT.5):(y0.INPUT.6:y1.INPUT.6):(y0.INPUT.7:y1.INPUT.7)"/>
+        <outputvec name="OUT0" from="y0.OUTPUT"/>
+        <outputvec name="OUT1" from="y1.OUTPUT"/>
+
+        <!-- control line select -->
+        <input name="SEL" to="y1.SELECT:n.A"/>
+
+    </module>
+
+    <module name="8-bit-mux">
+        <instance type="8-bit-select" name="y0"/>
+        <instance type="8-bit-select" name="y1"/>
+        <instance type="or-array" name="or-gates"/>
+
+        <gate type="NOT" name="n"/>
+
+        <signal from="n" to="y0.SELECT"/>
+        <signalvec size="8" from="y0.OUTPUT" to="or-gates.A"/>
+        <signalvec size="8" from="y1.OUTPUT" to="or-gates.B"/>
+
+        <inputvec  name="IN0" size="8" to="y0.INPUT"/>
+        <inputvec  name="IN1" size="8" to="y1.INPUT"/>
+        <outputvec name="OUT" size="8" from="or-gates.Y"/>
+
+        <input name="SEL" to="y1.SELECT:n.A"/>
+    </module>
+
+    <module name="resettable-flipflop">
+
+        <gate type="FLIPFLOP" name="ff"/>
+        <gate type="AND" name="and-reset"/>
+        <gate type="AND" name="and-clock"/>
+
+        <signal from="and-reset" to="ff.Din"/>
+        <signal from="and-clock" to="ff.Clk"/>
+
+        <!-- reset is synchronous -->
+        <input name="Din"   to="and-reset.A"/>
+        <input name="NReset" to="and-reset.B"/>
+
+        <input name="Clk"    to="and-clock.A"/>
+        <input name="Enable" to="and-clock.B"/>
+
+        <output name="Q" from="ff"/>
+
+    </module>
+
+    <module name="4-bit-register">
+
+        <gate type="resettable-flipflop" name="d0"/>
+        <gate type="resettable-flipflop" name="d1"/>
+        <gate type="resettable-flipflop" name="d2"/>
+        <gate type="resettable-flipflop" name="d3"/>
+
+        <gate type="NOT" name="n"/>
+        <signal from="n" to="d0.NReset:d1.NReset:d2.NReset:d3.NReset"/>
+
+        <inputvec  name="Din" size="4" to="d0.Din:d1.Din:d2.Din:d3.Din"/>
+        <outputvec name="Q"   size="4" from="d0.Q:d1.Q:d2.Q:d3.Q"/>
+
+        <input name="Reset"  to="n.A"/>
+        <input name="Clk"    to="d0.Clk:d1.Clk:d2.Clk:d3.Clk"/>
+        <input name="Enable" to="d0.Enable:d1.Enable:d2.Enable:d3.Enable"/>
+
+    </module>
+
+    <module name="8-bit-register">
+
+        <instance name="lsb" type="4-bit-register"/>
+        <instance name="msb" type="4-bit-register"/>
+
+        <inputvec  name="Din" size="8" to="lsb.Din:msb.Din"/>
+        <outputvec name="Q"   size="8" from="lsb.Q:msb.Q"/>
+
+        <input name="Reset"  to="lsb.Reset:msb.Reset"/>
+        <input name="Clk"    to="lsb.Clk:msb.Clk"/>
+        <input name="Enable" to="lsb.Enable:msb.Enable"/>
+
+    </module>
+
+</root>

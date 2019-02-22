@@ -1,36 +1,7 @@
 <root>
     <import name="logic-unit"/>
     <import name="adder-logic"/>
-
-    <module name="8-bit-select">
-        <gate type="AND" name="a"/>
-        <gate type="AND" name="b"/>
-        <gate type="AND" name="c"/>
-        <gate type="AND" name="d"/>
-        <gate type="AND" name="e"/>
-        <gate type="AND" name="f"/>
-        <gate type="AND" name="g"/>
-        <gate type="AND" name="h"/>
-
-        <outputvec name="OUTPUT" size="8" from="a.Y:b.Y:c.Y:d.Y:e.Y:f.Y:g.Y:h.Y">
-        <inputvec  name="INPUT" size="8"  to="a.A:b.A:c.A:d.A:e.A:f.A:g.A:h.A"/>
-        <input     name="SELECT"          to="a.B:b.B:c.B:d.B:e.B:f.B:g.B:h.B"/>
-    </module>
-
-    <module name="or-array">
-        <gate type="OR" name="a"/>
-        <gate type="OR" name="b"/>
-        <gate type="OR" name="c"/>
-        <gate type="OR" name="d"/>
-        <gate type="OR" name="e"/>
-        <gate type="OR" name="f"/>
-        <gate type="OR" name="g"/>
-        <gate type="OR" name="h"/>
-
-        <inputvec  name="A" size="8"   to="a.A:b.A:c.A:d.A:e.A:f.A:g.A:h.A"/>
-        <inputvec  name="B" size="8"   to="a.B:b.B:c.B:d.B:e.B:f.B:g.B:h.B"/>
-        <outputvec name="Y" size="8" from="a.Y:b.Y:c.Y:d.Y:e.Y:f.Y:g.Y:h.Y"/>
-    </module>
+    <import name="alu-util">
 
     <module name="alu">
 
@@ -42,7 +13,13 @@
         <signalvec from="add-sub.SUM" to="select-add-sub.INPUT"/>
         <signalvec from="logic.Y"     to="select-logic.INPUT"/>
 
-        <!--  -->
+        <!-- select lines for output-->
+        <input name="SELECT-ADD-SUB" to="select-add-sub.SELECT"/>
+        <input name="SELECT-LOGIC"   to="select-logic.SELECT"/>
+
+        <!-- input lines to change the behavior of the ALU -->
+
+
 
     </module>
 </root>
