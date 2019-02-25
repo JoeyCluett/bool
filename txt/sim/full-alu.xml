@@ -1,7 +1,7 @@
 <root>
     <import name="logic-unit"/>
     <import name="adder-logic"/>
-    <import name="alu-util">
+    <import name="alu-util"/>
 
     <module name="alu">
 
@@ -10,8 +10,8 @@
         <instance name="select-add-sub" type="8-bit-select"/>
         <instance name="select-logic"   type="8-bit-select"/>
 
-        <signalvec from="add-sub.SUM" to="select-add-sub.INPUT"/>
-        <signalvec from="logic.Y"     to="select-logic.INPUT"/>
+        <signalvec size="8" from="add-sub.SUM" to="select-add-sub.INPUT"/>
+        <signalvec size="8" from="logic.Y"     to="select-logic.INPUT"/>
 
         <!-- select lines for output-->
         <input name="SELECT-ADD-SUB" to="select-add-sub.SELECT"/>

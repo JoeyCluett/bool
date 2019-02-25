@@ -81,7 +81,7 @@
 
         <!-- collect bits for the zero output -->
         <instance type="or-4" name="zero-or"/>
-        <signalvec from="bit0.SUM:bit1.SUM:bit2.SUM:bit3.SUM" to="zero-or.A"/>
+        <signalvec size="4" from="bit0.SUM:bit1.SUM:bit2.SUM:bit3.SUM" to="zero-or.A"/>
 
         <!-- arrays of input/output values -->
         <inputvec size="4"  name="A"   to="bit0.A:bit1.A:bit2.A:bit3.A"/>

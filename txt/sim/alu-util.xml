@@ -56,9 +56,9 @@
 
         <signal from="n" to="y0.SELECT"/>
 
-        <inputvec name="IN" to="(y0.INPUT.0:y1.INPUT.0):(y0.INPUT.1:y1.INPUT.1):(y0.INPUT.2:y1.INPUT.2):(y0.INPUT.3:y1.INPUT.3):(y0.INPUT.4:y1.INPUT.4):(y0.INPUT.5:y1.INPUT.5):(y0.INPUT.6:y1.INPUT.6):(y0.INPUT.7:y1.INPUT.7)"/>
-        <outputvec name="OUT0" from="y0.OUTPUT"/>
-        <outputvec name="OUT1" from="y1.OUTPUT"/>
+        <inputvec  name="IN"   size="8" to="(y0.INPUT.0:y1.INPUT.0):(y0.INPUT.1:y1.INPUT.1):(y0.INPUT.2:y1.INPUT.2):(y0.INPUT.3:y1.INPUT.3):(y0.INPUT.4:y1.INPUT.4):(y0.INPUT.5:y1.INPUT.5):(y0.INPUT.6:y1.INPUT.6):(y0.INPUT.7:y1.INPUT.7)"/>
+        <outputvec name="OUT0" size="8" from="y0.OUTPUT"/>
+        <outputvec name="OUT1" size="8" from="y1.OUTPUT"/>
 
         <!-- control line select -->
         <input name="SEL" to="y1.SELECT:n.A"/>

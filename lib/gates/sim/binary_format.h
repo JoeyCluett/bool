@@ -355,7 +355,12 @@ void create_binary_module(SimulationModule* sm, std::string str) {
                 {"Clk", 'C'}
             };
 
-            sinfo.dest_port = port_name_map.at(name_and_port.second);
+            try {
+                sinfo.dest_port = port_name_map.at(name_and_port.second);
+            } catch(std::out_of_range& ex) {
+                throw std::runtime_error("binary_format error : While packing signal data, unable "
+                "to find entry for port '" + name_and_port.second + "' in port/name map");
+            }
 
             // add this signal to the signal array
             signal_vector.push_back(sinfo);
