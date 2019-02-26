@@ -6,6 +6,8 @@
 <# or gates> <# nor gates> <# and gates> <# nand gates> <# xor gates> <# xnor gates> <# not gates> <# flipflops>
 
 // signal list. in this list, every signal has a single start and end point
+// NOTE : signals with multiple endpoints are split into multiple single-endpoint signals
+
 //   int
 <# of signals>
 
@@ -38,14 +40,14 @@
 // for every input
     //  string             int                       
     <input name> <number of destination ports> 
-    
-    //     byte                 int                  char
-    <destination type 1> <destination index 1> <destination port 1> 
+        
+        //     byte                 int                  char
+        <destination type 1> <destination index 1> <destination port 1> 
 
-    // ...
+        // ...
 
-    //     byte                 int                  char
-    <destination type n> <destination index n> <destination port n>
+        //     byte                 int                  char
+        <destination type n> <destination index n> <destination port n>
 
 // output list. every output comes from a single location
 //   int

@@ -108,6 +108,8 @@
         <signal from="lsb.CARRY-OUT" to="msb.CARRY-IN"/>
 
         <gate type="NOR" name="zero-nor"/>
+        <signal from="lsb.ZERO" to="zero-nor.A"/>
+        <signal from="msb.ZERO" to="zero-nor.B"/>
 
         <!-- data input and output -->
         <inputvec size="8" name="A" to="lsb.A:msb.A"/>
@@ -123,6 +125,8 @@
         <input name="INVERT-B"   to="lsb.INVERT-B:msb.INVERT-B"/>
         <input name="INVERT-SUM" to="lsb.INVERT-SUM:msb.INVERT-SUM"/>
 
+        <output name="ZERO" from="zero-nor"/>
+
     </module>
 
     <module name="registered-8-bit-arithmetic-unit">
@@ -133,8 +137,8 @@
         <instance type="8-bit-register"        name="accum"/>
 
         <signalvec size="8" from="arith.SUM" to="accum.Din"/>
-        <signalvec size="8" from="reg-a.Q" to="arith.A"/>
-        <signalvec size="8" from="reg-b.Q" to="arith.B"/>
+        <signalvec size="8" from="reg-a.Q"   to="arith.A"/>
+        <signalvec size="8" from="reg-b.Q"   to="arith.B"/>
 
         <!-- control signals for various registers in arithmetic unit. there are 
             quite a few and there are several more in the logic unit -->
@@ -150,8 +154,9 @@
         <input name="INVERT-B"   to="arith.INVERT-B"/>
         <input name="INVERT-SUM" to="arith.INVERT-SUM"/>
 
-        <!-- single bit outputs -->
-        <output name="Zero" from=""/>
+        <!-- single bit outputs, control flags for branches -->
+        <output name="Zero-Flag"  from="arith.ZERO"/>
+        <output name="Carry-Flag" from="arith.CARRY-OUT"/>
 
     </module>
 

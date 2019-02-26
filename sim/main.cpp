@@ -74,14 +74,26 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+std::vector<std::string> imported_files; // <module name="imported_file"/>
+
 void preprocess_simulator_files(std::string filename, std::ostream& os) {
     XmlDocument doc(filename);
     auto module = doc.root().child();
 
+    auto import_already_used = [](std::string cmp_str) -> bool {
+        for(auto& str : imported_files)
+            if(str == cmp_str)
+                return true;
+        return false;
+    };  
+
     while(!module.empty()) {
         if(module.name() == "import") {
-            // recursively evaluate all import statements
-            preprocess_simulator_files(module.attr("name").value() + ".xml", os);
+            // recursively evaluate all import statements exactly once
+            if(!import_already_used(module.attr("name").value())) {
+                imported_files.push_back(module.attr("name").value());
+                preprocess_simulator_files(module.attr("name").value() + ".xml", os);
+            }
         }
         else if(module.name() == "module") {
             module.format_output(os, "    ");

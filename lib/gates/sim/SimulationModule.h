@@ -5,6 +5,9 @@
 #include <map>
 #include <sstream>
 
+// comment out to disable debug information
+#define DEBUG_LOG
+
 enum class logic_type : int {
     NONE, OR, NOR, AND, NAND, XOR, XNOR, NOT, FLIPFLOP
 };
@@ -220,6 +223,10 @@ private:
     std::map<std::string, std::string> inputvec_map;  // map<(name:size), destination(s)>
     std::map<std::string, std::string> outputvec_map; // map<(name:size), source(s)>
 
+    // signalvec types are stored here. the size of the 
+    // resulting config string is compared before being stored
+    std::map<std::string, std::string> signalvec_map;
+
     // lookuptable types are used to simplify many logic designs. 
     // the lookuptable type is implemented as a string->string map
     // map<name, pair<default, map<input, output>>>
@@ -243,6 +250,10 @@ public:
             return this->input_map;
         else if(which_map == "output")
             return this->output_map;
+        else if(which_map == "inputvec")
+            return this->inputvec_map;
+        else if(which_map == "outputvec")
+            return this->outputvec_map;
 
         throw std::runtime_error("INTERNAL ERROR -> map type requested does not exist");
     }
@@ -283,6 +294,11 @@ public:
         // the XmlNode passed as argument should already be a ready-to-go module
         this->module_name = n.attr("name").value();
 
+        #ifdef DEBUG_LOG
+        std::cout << "Module '" << this->module_name << "' found, beginning "
+        "compilation phase...\n" << std::flush;
+        #endif
+
         // jump to all of the child nodes
         n = n.child();
         while(!n.empty()) {
@@ -291,27 +307,36 @@ public:
             //std::cout << n.name() << std::endl << std::flush;
 
             if(n.name() == "gate") {
-                //std::cout << "found logic gate in file...\n";
+                #ifdef DEBUG_LOG
+                std::cout << "found logic gate in file...\n" << std::flush;
+                #endif
 
                 // throw exception if false
                 n.hasAttrs({"type", "name"}, true);
                 n.hasOnlyAttrs({"type", "name"}, true);
 
                 auto _name = n.attr("name").value();
-                auto _type = this->logic_type_from_str(n.attr("type").value());
 
-                this->gate_map.insert({_name, _type});
+                try {
+                    auto _type = this->logic_type_from_str(n.attr("type").value());
+                    this->gate_map.insert({_name, _type});
+                } catch(std::out_of_range& err) {
+                    throw std::runtime_error("In module '" + this->module_name + 
+                    "' logic gate of type '" + n.attr("type").value() + "' doesn't exist");
+                }
             }
             else if(n.name() == "instance") {
-                //std::cout << "found instance in file...\n";
-            
+                #ifdef DEBUG_LOG
+                std::cout << "found instance in file...\n" << std::flush;
+                #endif
+
                 n.hasAttrs({"type", "name"}, true);
                 n.hasOnlyAttrs({"type", "name"}, true);
 
                 auto _type = n.attr("type").value();
                 auto _name = n.attr("name").value();
 
-                // we need ot put this instance in the map as well
+                // we need to put this instance in the map as well
                 this->instance_map.insert({_name, _type});
 
                 // now we have a module type that we need to go look for
@@ -341,7 +366,9 @@ public:
 
             }
             else if(n.name() == "input") {
-                //std::cout << "found input in file...\n";
+                #ifdef DEBUG_LOG
+                std::cout << "found input in file...\n" << std::flush;
+                #endif 
 
                 n.hasAttrs({"name", "to"}, true);
                 n.hasOnlyAttrs({"name", "to"}, true);
@@ -392,7 +419,9 @@ public:
                 //this->input_map.insert({_name, _to});
             }
             else if(n.name() == "output") {
-                //std::cout << "output found in file\n";
+                #ifdef DEBUG_LOG
+                std::cout << "output found in file\n" << std::flush;
+                #endif 
 
                 n.hasAttrs({"from", "name"}, true);
                 n.hasOnlyAttrs({"from", "name"}, true);
@@ -487,7 +516,9 @@ public:
                 this->output_map.insert({_name, _from});
             }
             else if(n.name() == "signal") {
-                //std::cout << "signal found in file\n";
+                #ifdef DEBUG_LOG
+                std::cout << "signal found in file\n" << std::flush;
+                #endif
 
                 // every signal must have these attributes
                 n.hasAttrs({"from", "to"}, true);
@@ -495,9 +526,6 @@ public:
 
                 auto _from = n.attr("from").value();
                 auto _to   = n.attr("to").value();
-
-                //std::cout << "  from -> " << _from << std::endl;
-                //std::cout << "  to   -> " << _to << std::endl;
 
                 // test if the source is an existing gate instance
                 // if it is, skip to the dest evaluation
@@ -639,33 +667,213 @@ public:
 
             }
             else if(n.name() == "inputvec") {
-                //std::cout << "Found inputvec in file\n";
+                #ifdef DEBUG_LOG
+                std::cout << "Found inputvec in file\n" << std::flush;
+                #endif
 
                 // every signal must have these attributes
                 n.hasAttrs({"name", "size", "to"}, true);
                 n.hasOnlyAttrs({"name", "size", "to"}, true);
 
-                auto _name = n.attr("name").value();
-                int  _size = std::stoi(n.attr("size").value());
-                auto _to   = n.attr("to").value();
-
+                try {
+                    auto _name = n.attr("name").value();
+                    int  _size = std::stoi(n.attr("size").value());
+                    auto _to   = n.attr("to").value();
+                } catch(std::runtime_error& err) {
+                    // change the error message to something more useful
+                    throw std::runtime_error("In module '" + this->module_name + 
+                    "' in inputvec node '" + n.name() + "' error verifying "
+                    "attributes. nested error message : '" + err.what() + "'");
+                }
 
             }
             else if(n.name() == "outputvec") {
-                //std::cout << "Found outputvec in file\n";
+                #ifdef DEBUG_LOG
+                std::cout << "Found outputvec in file\n" << std::flush;
+                #endif
 
-                // every outputvec needs these things
-                n.hasAttrs({"name", "size", "from"}, true);
-                n.hasOnlyAttrs({"name", "size", "from"}, true);
+                try {
+                    // every outputvec needs these things
+                    n.hasAttrs({"name", "size", "from"}, true);
+                    n.hasOnlyAttrs({"name", "size", "from"}, true);
+                } catch(std::runtime_error& err) {
+                    // change the error message to something more useful
+                    throw std::runtime_error("In module '" + this->module_name + 
+                    "' in inputvec node '" + n.name() + "' error verifying "
+                    "attributes. error message : '" + err.what() + "'");
+                }
 
                 auto _name = n.attr("name").value();
                 auto _from = n.attr("from").value();
                 int  _size = std::stoi(n.attr("size").value());
 
+                auto _config_vec = this->split_colon_string(_from);
+                if(_config_vec.size() > _size) { // we can get more gates but never less
+                    throw std::runtime_error("In module '" + this->module_name + 
+                    "' outputvec '" + _name + "' has too many source operands");
+                }
+                else if(_config_vec.size() < _size) {
+                    std::vector<std::string> tmp_config_vec;
+
+                    // iterate through every entry and expand as needed
+                    for(auto& str : _config_vec) {
+                        auto gate_iter = this->gate_map.find(str);
+                        if(gate_iter != this->gate_map.end()) {
+                            tmp_config_vec.push_back(str);
+                        }
+                        else {
+                            // look in the output and outputvecs of all submodules
+                            auto deep_split = this->split_period_string(str);
+                            auto mod_iter = this->instance_map.find(deep_split.at(0));
+                            if(mod_iter != this->instance_map.end()) {
+
+                                
+
+                                auto* mod_ptr = mod_iter->second;
+                                auto& mod_output_map    = mod_ptr->get_internal_map("output");
+                                auto& mod_outputvec_map = mod_ptr->get_internal_map("outputvec");
+
+                                auto output_iter = mod_output_map.find(deep_split.at(1));
+                                if(output_iter != mod_output_map.end()) {
+                                    // regular output
+                                    tmp_config_vec.push_back(deep_split[0] + "." + output_iter->second);
+                                }
+                                else {
+                                    // look through outputvec_map
+                                    output_iter = mod_outputvec_map.find(deep_split.at(1));
+                                    if(output_iter != mod_outputvec_map.end()) {
+                                        auto str_vec = this->split_colon_string(output_iter->second);
+
+                                        for(auto& str : str_vec)
+                                            tmp_config_vec.push_back(deep_split[0] + "." + str);
+                                    }
+                                    else {
+                                        // ERROR. output not found
+                                        throw std::runtime_error("In module '" + this->module_name + "' "
+                                        "outputvec 'from' unable to find output or outputvec '" + 
+                                        deep_split[1] + "' for submodule '" + mod_iter->second + "'");
+                                    }
+                                }
+                            }
+                            else {
+                                // cant be found anywhere
+                                throw std::runtime_error("In module '" + this->module_name + 
+                                "' outputvec unable to find '" + deep_split.at(0) + "' in instance map");
+                            }
+                        }
+                    }
+                }
+                // else do nothing, operands are already fully-qualified gate names
+            }
+            else if(n.name() == "signalvec") {
+                #ifdef DEBUG_LOG
+                std::cout << "Found signalvec in file\n" << std::flush;
+                #endif
+            
+                try {
+                    n.hasAttrs({"size", "from", "to"}, true);
+                    n.hasOnlyAttrs({"size", "from", "to"}, true);
+                } catch(std::runtime_error& err) {
+                    // change the error message to something more useful
+                    throw std::runtime_error("In module '" + this->module_name + 
+                    "' in signalvec node, error verifying attributes. error "
+                    "message : '" + err.what() + "'");
+                }
+            
+                auto _size = std::stoi(n.attr("size").value());
+                auto _from = n.attr("from").value();
+                auto _to   = n.attr("to").value();
+
+                auto _from_config_table = this->split_colon_string(_from);
+                auto _to_config_table   = this->split_config_string(_to);
+
+                // make sure we have the required number of source operands
+                if(_from_config_table.size() > _size) {
+                    throw std::runtime_error("In module '" + this->module_name + "' in "
+                    "signalvec 'from' attribute has to many source operands");
+                }
+                else if(_from_config_table.size() != _size) {
+                    std::vector<std::string> tmp_config_table;
+                    for(auto& str : _from_config_table) {
+                        // we only need to check the entity map. gates need to stay by 
+                        // themselves. if its not in the entity map, its a gate
+                        if(this->gate_map.find(str) != this->gate_map.end()) {
+                            // gate gets added right away, no questions asked
+                            tmp_config_table.push_back(str);
+                        }
+                        else {
+                            // split and search in the entity map
+                            auto deep_split = this->split_period_string(str);
+                            auto iter = this->instance_map.find(deep_split.at(0));
+
+                            if(iter == this->instance_map.end()) {
+                                throw std::runtime_error("In module '" + this->module_name + "' "
+                                "signalvec 'from' attribute, unable to find gate or instance with "
+                                "name '" + deep_split[0] + "'");
+                            }
+                            else {
+                                // iterate through every input adding fully evaluated input 
+                                // name to configuration vector
+
+                                // fetch the instance map for the correct module
+                                auto mod_iter = module_map.find(iter->second);
+                                if(mod_iter == module_map.end()) {
+                                    throw std::runtime_error("In module '" + this->module_name + 
+                                    "' signalvec node unable to find submodule type '" + iter->second + 
+                                    "' in global module map");
+                                }
+                                else {
+                                    auto* mod_ptr = mod_iter->second;
+                                    auto& mod_output_map    = mod_ptr->get_internal_map("output");
+                                    auto& mod_outputvec_map = mod_ptr->get_internal_map("outputvec");
+                                    
+                                    auto output_iter = mod_output_map.find(deep_split.at(1));
+                                    if(output_iter != mod_output_map.end()) {
+                                        // regular output
+                                        tmp_config_table.push_back(deep_split[0] + "." + output_iter->second);
+                                    }
+                                    else {
+                                        // look through outputvec_map
+                                        output_iter = mod_outputvec_map.find(deep_split.at(1));
+                                        if(output_iter != mod_outputvec_map.end()) {
+                                            auto str_vec = this->split_colon_string(output_iter->second);
+
+                                            for(auto& str : str_vec)
+                                                tmp_config_table.push_back(deep_split[0] + "." + str);
+                                        }
+                                        else {
+                                            // ERROR. output not found
+                                            throw std::runtime_error("In module '" + this->module_name + "' "
+                                            "signalvec 'from' unable to find output or outputvec '" + 
+                                            deep_split[1] + "' for submodule '" + iter->second + "'");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // after we have evaluated each element, see if we have everything we need
+                    if(tmp_config_table.size() == _size)
+                        _from_config_table = tmp_config_table;
+                    else {
+                        throw std::runtime_error("In module '" + this->module_name + "' signalvec "
+                        "does not have proper number of sources. Please fix before continuing");
+                    }
+                }
+
+                // no matter what just happened, _from_config_table contains 
+                // a fully evaluated list of 'from' sources. continue on to 
+                // the destination operands
+
+
 
             }
+            // no support for lookup tables yet my dude!
             else if(n.name() == "lookuptable") {
-                //std::cout << "Found lookuptable in file\n";
+                #ifdef DEBUG_LOG
+                std::cout << "Found lookuptable in file\n" << std::flush;
+                #endif
 
                 n.hasAttrs({"name", "inputsize", "outputsize", "default"}, true);
                 n.hasOnlyAttrs({"name", "inputsize", "outputsize", "default"}, true);
@@ -713,6 +921,11 @@ public:
 
             n = n.next();
         }
+
+        #ifdef DEBUG_LOG
+        std::cout << "Module '" << this->module_name << 
+        "' : all components collected\n" << std::flush;
+        #endif
 
         // fully qualify all signals inside each sub-module. this also 
         // makes them available to any future parent modules

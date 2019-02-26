@@ -59,6 +59,25 @@ struct output_info_t {
     output_source_t output_source;
 };
 
+
+char get_port_from_port_string(std::string input) {
+    const std::map<std::string, char> port_name_map = {
+        {"A", 'A'},
+        {"B", 'B'},
+        {"D", 'D'},
+        {"Din", 'D'},
+        {"Clk", 'C'}
+    };
+
+    auto iter = port_name_map.find(input);
+    if(iter == port_name_map.end()) {
+        throw std::runtime_error("get_port_from_port_string error : unable to find port for port-member '" + input + "'");
+    }
+    else {
+        return (*iter).second;
+    }
+}
+
 std::ostream& operator<<(std::ostream& os, output_source_t& ost) {
 
     os << "  <-  ";
@@ -269,12 +288,23 @@ static auto get_name_and_port(std::string str) -> std::pair<std::string, std::st
 void create_binary_module(SimulationModule* sm, std::string str) {
     std::ofstream ofile(str, std::ios::binary);
 
+    #ifdef DEBUG_LOG
+    std::cout << "create_binary_module : module '" << sm->get_module_name() 
+    << "' generating binary module\n";
+    std::cout << "    writing module name..." << std::flush;
+    #endif
+
     ofile.write(sm->get_module_name().c_str(), sm->get_module_name().size());
 
     {
         char c[1] = {0x00};
         ofile.write(c, 1);
     }
+
+    #ifdef DEBUG_LOG
+    std::cout << "DONE\n";
+    std::cout << "    writing gate number info..." << std::flush;
+    #endif
 
     // clear this struct
     gate_type_info_t gate_nums;
@@ -302,16 +332,21 @@ void create_binary_module(SimulationModule* sm, std::string str) {
     // now we have the number of each gate type
     ofile.write(gate_nums.c_buf, 32);
 
+    #ifdef DEBUG_LOG
+    std::cout << "DONE\n";
+    std::cout << "    writing signal info to file..." << std::flush;
+    #endif
+
     auto get_logic_type_of = [](logic_type lt) -> uint8_t {
         switch(lt) {
-            case logic_type::OR: return 0x00;
-            case logic_type::NOR: return 0x01;
-            case logic_type::AND: return 0x02;
-            case logic_type::NAND: return 0x03;
-            case logic_type::XOR: return 0x04;
-            case logic_type::XNOR: return 0x05;
-            case logic_type::NOT: return 0x06;
-            case logic_type::FLIPFLOP: return 0x07;
+            case logic_type::OR: return 0x00;   break;
+            case logic_type::NOR: return 0x01;  break;
+            case logic_type::AND: return 0x02;  break;
+            case logic_type::NAND: return 0x03; break;
+            case logic_type::XOR: return 0x04;  break;
+            case logic_type::XNOR: return 0x05; break;
+            case logic_type::NOT: return 0x06;  break;
+            case logic_type::FLIPFLOP: return 0x07; break;
             default:
                 throw std::runtime_error("get_logic_type_of error : unknown logic_type");
         }
@@ -328,7 +363,8 @@ void create_binary_module(SimulationModule* sm, std::string str) {
         auto src_gate_iter = gate_map.find(sig_kv.first);
         if(src_gate_iter == gate_map.end()) {
             throw std::runtime_error(
-                "create_binary_module error : unable to find gate with name '" 
+                "create_binary_module error : in module '" + sm->get_module_name() + "' when "
+                "creating binary format for signals, unable to find gate with name '" 
                 + sig_kv.first + "'\n");
         }
 
@@ -336,7 +372,14 @@ void create_binary_module(SimulationModule* sm, std::string str) {
 
         // this info is the same for every destination
         sinfo.src_type  = get_logic_type_of(src_gate_iter->second);
-        sinfo.src_index = gate_index_map.at(src_gate_iter->first);
+
+        try {
+            sinfo.src_index = gate_index_map.at(src_gate_iter->first);
+        } catch(std::out_of_range& err) {
+            throw std::runtime_error("create_binary_module error : when generating binary "
+            "file for module '" + sm->get_module_name() + "' unable to find gate '" + 
+            src_gate_iter->first + "' in gate_index_map");
+        }
 
         // iterate through every destination port in the dest list
         auto str_vec = SimulationModule::split_colon_string(sig_kv.second);
@@ -344,22 +387,28 @@ void create_binary_module(SimulationModule* sm, std::string str) {
             auto name_and_port = ::get_name_and_port(str);
             
             // for now, assume everything is a logic gate
-            sinfo.dest_type = get_logic_type_of(gate_map.at(name_and_port.first));
-            sinfo.dest_index = gate_index_map.at(name_and_port.first);
-
-            const std::map<std::string, char> port_name_map = {
-                {"A", 'A'},
-                {"B", 'B'},
-                {"D", 'D'},
-                {"Din", 'D'},
-                {"Clk", 'C'}
-            };
+            try {
+                sinfo.dest_type = get_logic_type_of(gate_map.at(name_and_port.first));
+            } catch(std::exception& err) {
+                throw std::runtime_error("create_binary_module error : when accessing "
+                "gate_map wth gate name '" + name_and_port.first + "' and port name '" + name_and_port.second + 
+                "'. nested error: '" + err.what() + "'");
+            }
 
             try {
-                sinfo.dest_port = port_name_map.at(name_and_port.second);
-            } catch(std::out_of_range& ex) {
+                sinfo.dest_index = gate_index_map.at(name_and_port.first);
+            } catch(std::exception& err) {
+                throw std::runtime_error("create_binary_module error : when accessing "
+                "gate_index_map::at, unable to find '" + name_and_port.first + "'. nested "
+                "error: '" + err.what() + "'");
+            }
+
+            try {
+                //sinfo.dest_port = port_name_map.at(name_and_port.second);
+                sinfo.dest_port = ::get_port_from_port_string(name_and_port.second);
+            } catch(std::runtime_error& ex) {
                 throw std::runtime_error("binary_format error : While packing signal data, unable "
-                "to find entry for port '" + name_and_port.second + "' in port/name map");
+                "to find entry for port '" + name_and_port.second + "' in port/name map. nested error : '" + ex.what() + "'");
             }
 
             // add this signal to the signal array
@@ -375,6 +424,11 @@ void create_binary_module(SimulationModule* sm, std::string str) {
 
     for(auto& sinfo : signal_vector)
         ofile.write(sinfo.c_buf, 11);
+
+    #ifdef DEBUG_LOG
+    std::cout << "DONE\n";
+    std::cout << "    writing input info to file..." << std::flush;
+    #endif
 
     std::vector<input_info_t> input_vec;
 
@@ -397,18 +451,17 @@ void create_binary_module(SimulationModule* sm, std::string str) {
             input_dest_t input_dest;
             auto name_and_port = ::get_name_and_port(str);
 
-            const std::map<std::string, char> port_name_map = {
-                {"A", 'A'},
-                {"B", 'B'},
-                {"D", 'D'},
-                {"Din", 'D'},
-                {"Clk", 'C'}
-            };
-
             // for now, assume everything is a logic gate
             input_dest.dest_type  = get_logic_type_of(gate_map.at(name_and_port.first));
             input_dest.dest_index = gate_index_map.at(name_and_port.first);
-            input_dest.dest_port  = port_name_map.at(name_and_port.second);
+
+            try {
+                input_dest.dest_port = ::get_port_from_port_string(name_and_port.second);
+                //input_dest.dest_port  = port_name_map.at(name_and_port.second);
+            } catch(std::runtime_error& err) {
+                throw std::runtime_error("create_binary_format error : while generating input "
+                "data, unable to find port for port-name '" + name_and_port.second + "'");
+            }
 
             i_info.dest_arr.push_back(input_dest);
         }
@@ -429,6 +482,11 @@ void create_binary_module(SimulationModule* sm, std::string str) {
         for(auto& in_dest : inp.dest_arr)
             ofile.write(in_dest.c_buf, 6);
     }
+
+    #ifdef DEBUG_LOG
+    std::cout << "DONE\n";
+    std::cout << "    writing output info to file..." << std::flush;
+    #endif
 
     // pack all of the outputs
     std::vector<output_info_t> output_vec;
@@ -454,6 +512,10 @@ void create_binary_module(SimulationModule* sm, std::string str) {
         ofile.write(oinfo.output_name.c_str(), oinfo.output_name.size()+1);
         ofile.write(oinfo.output_source.c_buf, 5);
     }
+
+    #ifdef DEBUG_LOG
+    std::cout << "DONE\n" << std::flush;
+    #endif
 
     ofile.close();
 }

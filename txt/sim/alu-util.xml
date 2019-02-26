@@ -9,9 +9,18 @@
         <signal from="left"  to="top.A"/>
         <signal from="right" to="top.B"/>
 
-        <output name="Y" from="top"/>
+        <output   name="Y" from="top"/>
         <inputvec name="A" size="4" to="left.A:left.B:right.A:right.B"/>
 
+    </module>
+
+    <module name="nor-4">
+        <instance type="or-4" name="o"/>
+        <gate     type="NOT"  name="n"/>
+        <signal   from="o.Y"  to="n.A"/>
+
+        <output name="Y" from="o.Y"/>
+        <inputvec name="A" size="4" to="o.A"/>
     </module>
 
     <module name="8-bit-select">
@@ -105,10 +114,10 @@
 
     <module name="4-bit-register">
 
-        <gate type="resettable-flipflop" name="d0"/>
-        <gate type="resettable-flipflop" name="d1"/>
-        <gate type="resettable-flipflop" name="d2"/>
-        <gate type="resettable-flipflop" name="d3"/>
+        <instance type="resettable-flipflop" name="d0"/>
+        <instance type="resettable-flipflop" name="d1"/>
+        <instance type="resettable-flipflop" name="d2"/>
+        <instance type="resettable-flipflop" name="d3"/>
 
         <gate type="NOT" name="n"/>
         <signal from="n" to="d0.NReset:d1.NReset:d2.NReset:d3.NReset"/>
