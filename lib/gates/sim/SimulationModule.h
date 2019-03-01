@@ -5,6 +5,8 @@
 #include <map>
 #include <sstream>
 
+typedef std::string string_t;
+
 // comment out to disable debug information
 #define DEBUG_LOG
 
@@ -194,6 +196,19 @@ private:
         }
 
         return final_str;
+    }
+
+    SimulationModule* get_module_ptr_from_name(std::string name, std::map<std::string, SimulationModule*>& module_map) {
+        // search for a module with given name in instance map
+        auto iter = this->instance_map.find(name);
+        if(iter == this->instance_map.end())
+            throw std::runtime_error("module name '" + name + "' not found in instance map");
+
+        auto mod_map_iter = module_map.find(iter->second);
+        if(mod_map_iter == module_map.end())
+            throw std::runtime_error("module of type '" + iter->second + "' not found in global module map");
+
+        return mod_map_iter->second;
     }
 
     // each logic gate in a given simulation is tracked 
@@ -671,20 +686,22 @@ public:
                 std::cout << "Found inputvec in file\n" << std::flush;
                 #endif
 
-                // every signal must have these attributes
-                n.hasAttrs({"name", "size", "to"}, true);
-                n.hasOnlyAttrs({"name", "size", "to"}, true);
-
                 try {
-                    auto _name = n.attr("name").value();
-                    int  _size = std::stoi(n.attr("size").value());
-                    auto _to   = n.attr("to").value();
+                    // every signal must have these attributes
+                    n.hasAttrs({"name", "size", "to"}, true);
+                    n.hasOnlyAttrs({"name", "size", "to"}, true);
                 } catch(std::runtime_error& err) {
                     // change the error message to something more useful
                     throw std::runtime_error("In module '" + this->module_name + 
                     "' in inputvec node '" + n.name() + "' error verifying "
                     "attributes. nested error message : '" + err.what() + "'");
                 }
+
+                auto _name = n.attr("name").value();
+                int  _size = std::stoi(n.attr("size").value());
+                auto _to   = n.attr("to").value();
+
+
 
             }
             else if(n.name() == "outputvec") {
@@ -724,42 +741,17 @@ public:
                         else {
                             // look in the output and outputvecs of all submodules
                             auto deep_split = this->split_period_string(str);
-                            auto mod_iter = this->instance_map.find(deep_split.at(0));
-                            if(mod_iter != this->instance_map.end()) {
+                            SimulationModule* sim_ptr = NULL;
 
-                                
-
-                                auto* mod_ptr = mod_iter->second;
-                                auto& mod_output_map    = mod_ptr->get_internal_map("output");
-                                auto& mod_outputvec_map = mod_ptr->get_internal_map("outputvec");
-
-                                auto output_iter = mod_output_map.find(deep_split.at(1));
-                                if(output_iter != mod_output_map.end()) {
-                                    // regular output
-                                    tmp_config_vec.push_back(deep_split[0] + "." + output_iter->second);
-                                }
-                                else {
-                                    // look through outputvec_map
-                                    output_iter = mod_outputvec_map.find(deep_split.at(1));
-                                    if(output_iter != mod_outputvec_map.end()) {
-                                        auto str_vec = this->split_colon_string(output_iter->second);
-
-                                        for(auto& str : str_vec)
-                                            tmp_config_vec.push_back(deep_split[0] + "." + str);
-                                    }
-                                    else {
-                                        // ERROR. output not found
-                                        throw std::runtime_error("In module '" + this->module_name + "' "
-                                        "outputvec 'from' unable to find output or outputvec '" + 
-                                        deep_split[1] + "' for submodule '" + mod_iter->second + "'");
-                                    }
-                                }
+                            try {
+                                sim_ptr = this->get_module_ptr_from_name(deep_split.at(0), module_map);
+                            } catch(std::exception& err) {
+                                throw std::runtime_error(string_t("In outputvec : "
+                                "error finding source referenced in 'from' attribute. Nested error: ") + err.what());
                             }
-                            else {
-                                // cant be found anywhere
-                                throw std::runtime_error("In module '" + this->module_name + 
-                                "' outputvec unable to find '" + deep_split.at(0) + "' in instance map");
-                            }
+                            
+                            n.format_output(std::cout, "");
+
                         }
                     }
                 }
