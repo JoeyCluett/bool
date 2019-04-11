@@ -1,0 +1,98 @@
+<root>
+
+    <import name="std-gate-2"/>
+
+    <module name="or-4">
+        <instance type="or-2" name="o-out"/>
+        <instance type="or-2" name="o-in-a"/>
+        <instance type="or-2" name="o-in-b"/>
+
+        <signal from="o-in-a.Y" to="o-out.A"/>
+        <signal from="o-in-b.Y" to="o-out.B"/>
+
+        <input name="A" to="o-in-a.A"/>
+        <input name="B" to="o-in-a.B"/>
+        <input name="C" to="o-in-b.A"/>
+        <input name="D" to="o-in-b.B"/>
+
+        <output name="Y" from="o-out.Y"/>
+    </module>
+
+    <module name="nor-4">
+        <instance type="nor-2" name="n"/>
+        <instance type="or-2" name="o1"/>
+        <instance type="or-2" name="o2"/>
+
+        <signal from="o1.Y" to="n.A"/>
+        <signal from="o2.Y" to="n.B"/>
+
+        <input name="A" to="o1.A"/>
+        <input name="B" to="o1.B"/>
+        <input name="C" to="o2.A"/>
+        <input name="D" to="o2.B"/>
+
+        <output name="Y" from="n.Y"/>
+    </module>
+
+    <module name="and-4">
+        <instance type="and-2" name="a-top"/>
+        <instance type="and-2" name="a-bl"/>
+        <instance type="and-2" name="a-br"/>
+
+        <signal from="a-bl.Y" to="a-top.A"/>
+        <signal from="a-br.Y" to="a-top.B"/>
+        
+        <input name="A" to="a-bl.A"/>
+        <input name="B" to="a-bl.B"/>
+        <input name="C" to="a-br.A"/>
+        <input name="D" to="a-br.B"/>
+
+        <output name="Y" from="a-top.Y"/>
+    </module>
+
+    <module name="nand-4">
+        <instance type="and-4" name="a"/>
+        <gate type="NOT" name="n"/>
+
+        <signal from="a.Y" to="n.A"/>
+
+        <input name="A" to="a.A"/>
+        <input name="B" to="a.B"/>
+        <input name="C" to="a.A"/>
+        <input name="D" to="a.B"/>
+
+        <output name="Y" from="n"/>
+    </module>
+
+    <module name="xor-4">
+        <instance type="xor-2" name="x-top"/>
+        <instance type="xor-2" name="x-bl"/>
+        <instance type="xor-2" name="x-br"/>
+
+        <signal from="x-bl.Y" to="x-top.A"/>
+        <signal from="x-br.Y" to="x-top.B"/>
+
+        <input name="A" to="x-bl.A"/>
+        <input name="B" to="x-bl.B"/>
+        <input name="C" to="x-br.A"/>
+        <input name="D" to="x-br.B"/>
+
+        <output name="Y" from="x-top.Y"/>
+    </module>
+
+    <module name="xnor-4">
+        <instance type="xor-4" name="x"/>
+        <gate type="NOT" name="n"/>
+
+        <signal from="x.Y" to="n.A"/>
+
+        <input name="A" to="x.A"/>
+        <input name="B" to="x.B"/>
+        <input name="C" to="x.A"/>
+        <input name="D" to="x.B"/>
+
+        <output name="Y" from="n"/>
+    </module>
+
+</root>
+

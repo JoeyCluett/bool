@@ -536,8 +536,13 @@ public:
                 #endif
 
                 // every signal must have these attributes
-                n.hasAttrs({"from", "to"}, true);
-                n.hasOnlyAttrs({"from", "to"}, true);
+                try {
+                    n.hasAttrs({"from", "to"}, true);
+                    n.hasOnlyAttrs({"from", "to"}, true);
+                } catch(exception& err) {
+                    throw std::runtime_error("In module '" + this->module_name + "' "
+                    "signal tag, attribute error: '" + err.what() + "'");
+                }
 
                 auto _from = n.attr("from").value();
                 auto _to   = n.attr("to").value();
@@ -622,8 +627,8 @@ public:
                     // source string to search for the target in the gate map
                 }
 
-        // dont want to use a goto but will if i need to
-        signal_source_gate_finished:
+                // dont want to use a goto but will if i need to
+                signal_source_gate_finished:
 
                 std::vector<std::string> to_dest_str;
 
@@ -693,7 +698,7 @@ public:
                 } catch(std::runtime_error& err) {
                     // change the error message to something more useful
                     throw std::runtime_error("In module '" + this->module_name + 
-                    "' in inputvec node '" + n.name() + "' error verifying "
+                    "' in inputvec node, error verifying "
                     "attributes. nested error message : '" + err.what() + "'");
                 }
 
@@ -701,7 +706,7 @@ public:
                 int  _size = std::stoi(n.attr("size").value());
                 auto _to   = n.attr("to").value();
 
-
+                
 
             }
             else if(n.name() == "outputvec") {

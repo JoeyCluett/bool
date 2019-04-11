@@ -1,0 +1,48 @@
+<root>
+
+    <module name="or-2">
+        <gate type="OR" name="g1"/>
+        <input  name="A" to="g1.A"/>
+        <input  name="B" to="g1.B"/>
+        <output name="Y" from="g1"/>
+    </module>
+
+    <module name="nor-2">
+        <gate type="NOR" name="g1"/>
+        <input  name="A" to="g1.A"/>
+        <input  name="B" to="g1.B"/>
+        <output name="Y" from="g1"/>
+    </module>
+
+    <module name="and-2">
+        <gate type="AND" name="g1"/>
+        <input  name="A" to="g1.A"/>
+        <input  name="B" to="g1.B"/>
+        <output name="Y" from="g1"/>
+    </module>
+
+    <module name="nand-2">
+        <gate type="NAND" name="g1"/>
+        <input  name="A" to="g1.A"/>
+        <input  name="B" to="g1.B"/>
+        <output name="Y" from="g1"/>
+    </module>
+
+    <module name="xor-2">
+        <gate type="XOR" name="g1"/>
+        <input  name="A" to="g1.A"/>
+        <input  name="B" to="g1.B"/>
+        <output name="Y" from="g1"/>
+    </module>
+
+    <module name="xnor-2">
+        <gate type="XNOR" name="g1"/>
+        <input  name="A" to="g1.A"/>
+        <input  name="B" to="g1.B"/>
+        <output name="Y" from="g1"/>
+    </module>
+
+</root>
+
+
+

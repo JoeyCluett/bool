@@ -4,7 +4,7 @@ JSIM supports 8 different component types
     - type
         - OR/NOR/AND/NAND/XOR/XNOR/NOT/FLIPFLOP
     - name
-        - must be unique among components in current module
+        - must be unique among gates in current module
 
 2.) <signal> single signal type
     - from
@@ -21,9 +21,10 @@ JSIM supports 8 different component types
     - name
         - must be unique among components in current module
     - to
-        - instance input
-        - instance input-vector index
-        - logic gate input (explicit)
+        collection of
+            - instance input
+            - instance input-vector index
+            - logic gate input (explicit)
 
 4.) <output> single output type
     - name

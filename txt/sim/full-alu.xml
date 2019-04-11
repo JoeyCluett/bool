@@ -18,8 +18,7 @@
         <input name="SELECT-LOGIC"   to="select-logic.SELECT"/>
 
         <!-- input lines to change the behavior of the ALU -->
-
-
+        
 
     </module>
 </root>

@@ -1,0 +1,14 @@
+<root>
+
+    <import name="std-gate-util"/>
+    <import name="std-gate-2"/>
+    <import name="std-gate-3"/>
+    <import name="std-gate-4"/>
+
+    <module name="buffer">
+        <instance type="or-4" name="o4"/>
+        <input name="i" to="o4.A:o4.B:o4.C:o4.D"/>
+        <output name="o" from="o4.Y"/>
+    </module>
+
+</root>

@@ -128,6 +128,11 @@ public:
         return true;
     }
 
+    bool verify_attrs(std::vector<std::string> attrs, bool should_throw = false) {
+        return this->hasAttrs(attrs, should_throw) && 
+            this->hasOnlyAttrs(attrs, should_throw);
+    }
+
     std::ostream& format_output(std::ostream& os, std::string indent = "") {
         os << indent << '<' << this->name();
         

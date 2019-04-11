@@ -1,0 +1,16 @@
+<root>
+    <module name="not">
+        <gate type="NOT" name="n"/>
+        <input name="A" to="n.A"/>
+        <output name="Y" from="n"/>
+    </module>
+
+    <module name="std-flip-flop">
+        <gate type="FLIPFLOP" name="ff"/>
+        <input name="Clk" to="ff.Clk"/>
+        <input name="Din" to="ff.Din"/>
+        <output name="Dout" from="ff"/>
+    </module>
+
+</root>
+

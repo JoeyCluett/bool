@@ -1,0 +1,79 @@
+<root>
+
+    <import name="std-gate-2"/>
+
+    <module name="or-3">
+        <instance type="or-2" name="g-out"/>
+        <instance type="or-2" name="g-in"/>
+
+        <signal from="g-in.Y" to="g-out.A"/>
+
+        <input name="A" to="g-in.A"/>
+        <input name="B" to="g-in.B"/>
+        <input name="C" to="g-out.B"/>
+
+        <output name="Y" from="g-out.Y"/>
+    </module>
+
+    <module name="nor-3">
+        <instance type="or-3" name="o"/>
+
+        <input name="A" to="o.A"/>
+        <input name="B" to="o.B"/>
+        <input name="C" to="o.C"/>
+
+    </module>
+
+    <module name="and-3">
+        <instance type="and-2" name="g-out"/>
+        <instance type="and-2" name="g-in"/>
+
+        <signal from="g-in.Y" to="g-out.A"/>
+
+        <input name="A" to="g-in.A"/>
+        <input name="B" to="g-in.B"/>
+        <input name="C" to="g-out.B"/>
+        
+        <output name="Y" from="g-out.Y"/>
+    </module>
+
+    <module name="nand-3">
+        <instance type="and-3" name="a"/>
+        <gate type="NOT" name="n"/>
+
+        <signal from="a.Y" to="n.A"/>
+
+        <input name="A" to="a.A"/>
+        <input name="B" to="a.B"/>
+        <input name="C" to="a.C"/>
+
+        <output name="Y" from="n"/>
+    </module>
+
+    <module name="xor-3">
+        <instance type="xor-2" name="x0"/>
+        <instance type="xor-2" name="x1"/>
+
+        <signal from="x1.Y" to="x0.A"/>
+
+        <input name="A" to="x1.A"/>
+        <input name="B" to="x1.B"/>
+        <input name="C" to="x0.B"/>
+
+        <output name="Y" from="x0.Y"/>
+    </module>
+
+    <module name="xnor-3">
+        <instance type="xnor-2" name="nx"/>
+        <instance type="xor-2" name="x"/>
+
+        <signal from="x.Y" to="nx.A"/>
+
+        <input name="A" to="nx.B"/>
+        <input name="B" to="x.A"/>
+        <input name="C" to="x.B"/>
+
+        <output name="Y" from="nx.Y"/>
+    </module>
+
+</root>
