@@ -1,0 +1,19 @@
+<root>
+    <module name="full-adder">
+        <gate type="XOR" name="g-0"/>
+        <gate type="XOR" name="g-1"/>
+        <gate type="XOR" name="g-2"/>
+        <gate type="AND" name="g-3"/>
+        <gate type="AND" name="g-4"/>
+        <gate type="OR" name="g-5"/>
+        <signal from="g-0" to="g-1.A"/>
+        <signal from="g-2" to="g-3.B"/>
+        <signal from="g-3" to="g-5.B"/>
+        <signal from="g-4" to="g-5.A"/>
+        <input name="A" to="g-1.B:g-2.B:g-4.B"/>
+        <input name="B" to="g-0.B:g-2.A:g-4.A"/>
+        <input name="CarryIn" to="g-0.A:g-3.A"/>
+        <output name="CarryOut" from="g-5"/>
+        <output name="Sum" from="g-1"/>
+    </module>
+</root>
