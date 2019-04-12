@@ -6,6 +6,9 @@
 
 #include "main.h"
 
+// for debugging purposes
+#define DEBUG
+
 using namespace std;
 
 struct LogicConfiguration {
@@ -99,9 +102,6 @@ int main(int argc, char* argv[]) {
     vector<string> logic_equation;
     string logic_goes_to  = ""; // output that equation targets
     string logic_eqn_type = ""; // either "RPN" or "INFIX"
-
-    // for debugging purposes
-    #define DEBUG
 
     for(auto& s : token_list) {
         switch(current_state) {
@@ -336,6 +336,11 @@ ostream& operator<<(ostream& os, LogicConfiguration& lc) {
 }
 
 void evaluate_logical_equation_infix(vector<string> tl, string target, LogicConfiguration& lc) {
+
+    #ifdef DEBUG
+    cout << "    GENERATING RPN EQUATION FROM INFIX EXPRESSION...\n" << flush;
+    #endif
+
     const int and_type = 0;
     const int xor_type = 1;
     const int or_type  = 2;
@@ -346,37 +351,76 @@ void evaluate_logical_equation_infix(vector<string> tl, string target, LogicConf
     };
 
     vector<string> output_stack;
-    vector<string> operator_stack; // &, |, ^
+    vector<string> op_stack; // &, |, ^
 
     for(auto& s : tl) {
 
-       auto iter = logical_function_map.find(s);
-       if(iter == logical_function_map.end()) {
-            // this is an operand or parentheses
-            if(s != ")") {
-                operator_stack.push_back(s);
+        auto iter = logical_function_map.find(s);
+        if(iter == logical_function_map.end()) { // this is an operand or parentheses
+            if(s == "(") {
+                op_stack.push_back(s);
+            }
+            else if(s == ")") {
+                while(op_stack.back() != "(") {
+                    output_stack.push_back(op_stack.back());
+                    op_stack.pop_back();
+                }
+                op_stack.pop_back();
             }
             else {
-                
+                // operands get pushed onto output right away
+                output_stack.push_back(s);
             }
-       }
+        }
+        else { // this is an operator
+            // because all operators have the 'same' precedence, we push 
+            // them through as though every operator has lower precedence
+            // we can also take a shortcut here because every time an 
+            // operator is encountered, the previous operator (assuming 
+            // it exists) will be placed on the output stack
+            if(op_stack.size() == 0) {
+                op_stack.push_back(s);
+            }
+            else if(logical_function_map.find(op_stack.back()) != logical_function_map.end()) {
+                // operator is already on the op_stack. place it on output 
+                // and replace with current operator
+                output_stack.push_back(op_stack.back());
+                op_stack.back() = s;
+            }
+            else {
+                op_stack.push_back(s);
+            }
+        }
+
+        #ifdef DEBUG
+        cout << "    Operator stack: ";
+        for(auto& s : op_stack)
+            cout << s << ' ';
+        cout << "\n    Output stack:   ";
+        for(auto& s : output_stack)
+            cout << s << ' ';
+        cout << "\n\n";
+        #endif
 
     }
 
-    while(operator_stack.size() > 0) {
-        if(logical_function_map.find(operator_stack.back()) 
+    while(op_stack.size() > 0) {
+        if(logical_function_map.find(op_stack.back()) 
                 == logical_function_map.end())
             throw runtime_error("When generting RPN equation, malformed expression encountered");
 
-        output_stack.push_back(operator_stack.back());
-        operator_stack.pop_back();
+        output_stack.push_back(op_stack.back());
+        op_stack.pop_back();
     }
 
+    #ifdef DEBUG
     cout << "Generated RPN equation...\n    ";
     for(auto& s : output_stack)
         cout << s << ' ';
     cout << endl;
+    #endif 
 
+    ::evaluate_logical_equation_rpn(output_stack, target, lc);
 }
 
 void evaluate_logical_equation_rpn(vector<string> tl, string target, LogicConfiguration& lc) {
@@ -456,24 +500,3 @@ void evaluate_logical_equation_rpn(vector<string> tl, string target, LogicConfig
 
     lc.outputs.at(target) = st[0].str;
 }
-
-/*
-
-    a b xor c or
-    c a b xor or
-
-a:      a
-b:      a b
-xor:    op_ref(xor.out) // creates new xor gate and assigns: a->xor.A, b->xor.B, xor reference is placed on stack
-c:      op_ref(xor.out) c
-or:     op_ref(or.out) // creates new or gate and assigns: op_ref(or.out)->or.A, c->or.B, or reference is placed on stack 
-
--- ALTERNATIVELY --
-
-c:      c
-a:      c a
-b:      c a b
-xor:    c op_ref(xor.out) // a->xor.A , b->xor.B
-or:     op_ref(or.out) // c->or.A , op_ref(xor.out)->or.B
-
-*/

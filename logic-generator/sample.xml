@@ -1,9 +1,19 @@
 <root>
     <module name="full-adder">
-        <input name="a" to=""/>
-        <input name="b" to=""/>
-        <input name="ci" to=""/>
-        <output name="co" from=""/>
-        <output name="s" from=""/>
+        <gate type="XOR" name="g-0"/>
+        <gate type="XOR" name="g-1"/>
+        <gate type="AND" name="g-2"/>
+        <gate type="XOR" name="g-3"/>
+        <gate type="AND" name="g-4"/>
+        <gate type="OR" name="g-5"/>
+        <signal from="g-0" to="g-1.B"/>
+        <signal from="g-2" to="g-5.B"/>
+        <signal from="g-3" to="g-4.A"/>
+        <signal from="g-4" to="g-5.A"/>
+        <input name="a" to="g-0.B:g-2.B:g-3.B"/>
+        <input name="b" to="g-0.A:g-2.A:g-3.A"/>
+        <input name="ci" to="g-1.A:g-4.B"/>
+        <output name="co" from="g-5"/>
+        <output name="s" from="g-1"/>
     </module>
 </root>
