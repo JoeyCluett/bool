@@ -228,7 +228,11 @@ int main(int argc, char* argv[]) {
                         #endif
 
                         if(s == "END") {
-                            ::evaluate_logical_equation_rpn(logic_equation, logic_goes_to, lc);
+                            if(logic_eqn_type == "RPN")
+                                ::evaluate_logical_equation_rpn(logic_equation, logic_goes_to, lc);
+                            else if(logic_eqn_type == "INFIX")
+                                ::evaluate_logical_equation_infix(logic_equation, logic_goes_to, lc);
+                            
                             logic_equation.clear();
                             current_logic_state = logic_state_type;
                         }
@@ -329,6 +333,50 @@ ostream& operator<<(ostream& os, LogicConfiguration& lc) {
     }
 
     return os;
+}
+
+void evaluate_logical_equation_infix(vector<string> tl, string target, LogicConfiguration& lc) {
+    const int and_type = 0;
+    const int xor_type = 1;
+    const int or_type  = 2;
+    const map<string, const int> logical_function_map = {
+        { "and", and_type }, { "&", and_type }, { "AND", and_type }, { "*", and_type },
+        { "or", or_type   }, { "|", or_type  }, { "OR", or_type   }, { "+", or_type },
+        { "xor", xor_type }, { "^", xor_type }, { "XOR", xor_type },
+    };
+
+    vector<string> output_stack;
+    vector<string> operator_stack; // &, |, ^
+
+    for(auto& s : tl) {
+
+       auto iter = logical_function_map.find(s);
+       if(iter == logical_function_map.end()) {
+            // this is an operand or parentheses
+            if(s != ")") {
+                operator_stack.push_back(s);
+            }
+            else {
+                
+            }
+       }
+
+    }
+
+    while(operator_stack.size() > 0) {
+        if(logical_function_map.find(operator_stack.back()) 
+                == logical_function_map.end())
+            throw runtime_error("When generting RPN equation, malformed expression encountered");
+
+        output_stack.push_back(operator_stack.back());
+        operator_stack.pop_back();
+    }
+
+    cout << "Generated RPN equation...\n    ";
+    for(auto& s : output_stack)
+        cout << s << ' ';
+    cout << endl;
+
 }
 
 void evaluate_logical_equation_rpn(vector<string> tl, string target, LogicConfiguration& lc) {

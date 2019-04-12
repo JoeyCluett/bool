@@ -1,0 +1,9 @@
+<root>
+    <module name="full-adder">
+        <input name="a" to=""/>
+        <input name="b" to=""/>
+        <input name="ci" to=""/>
+        <output name="co" from=""/>
+        <output name="s" from=""/>
+    </module>
+</root>
