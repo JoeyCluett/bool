@@ -1,0 +1,73 @@
+<root>
+    <import name="cla-lookahead-unit"/>
+    <import name="cla-half-adder"/>
+
+    <module name="4-bit-adder">
+
+        <!-- all of the sum outputs come from here -->
+        <gate type="XOR" name="s0"/>
+        <gate type="XOR" name="s1"/>
+        <gate type="XOR" name="s2"/>
+        <gate type="XOR" name="s3"/>
+
+        <!-- needed for generating carries -->
+        <instance type="cla-lookahead-unit" name="lau"/>
+
+        <signal from="lau.c0" to="s0.A"/>
+        <signal from="lau.c1" to="s1.A"/>
+        <signal from="lau.c2" to="s2.A"/>
+        <signal from="lau.c3" to="s3.A"/>
+
+        <!-- standard half adders with different output names 
+        to help with the carry lookahead design -->
+        <instance type="cla-half-adder" name="ha0"/>
+        <instance type="cla-half-adder" name="ha1"/>
+        <instance type="cla-half-adder" name="ha2"/>
+        <instance type="cla-half-adder" name="ha3"/>
+
+        <!-- signals from the various half adders to the carry generation unit -->
+        <signal from="ha0.g" to="lau.g0"/>
+        <signal from="ha0.p" to="lau.p0"/>
+        <signal from="ha1.g" to="lau.g1"/>
+        <signal from="ha1.p" to="lau.p1"/>
+        <signal from="ha2.g" to="lau.g2"/>
+        <signal from="ha2.p" to="lau.p2"/>
+        <signal from="ha3.g" to="lau.g3"/>
+        <signal from="ha3.p" to="lau.p3"/>
+
+        <!-- the output xor gates need the propagates from the first stage -->
+        <signal from="ha0.p" to="s0.B"/>
+        <signal from="ha1.p" to="s1.B"/>
+        <signal from="ha2.p" to="s2.B"/>
+        <signal from="ha3.p" to="s3.B"/>
+
+        <!-- A and B inputs: the numbers being added -->
+        <inputvec size="4" name="a" to="ha0.a:ha1.a:ha2.a:ha3.a"/>
+        <inputvec size="4" name="b" to="ha0.b:ha1.b:ha2.b:ha3.b">
+
+        <!-- carry in and carry out are both one bit -->
+        <input name="cin" to="lau.Cin"/>
+        <output name="cout" from="lau.Cout"/>
+
+        <!-- the sum outputs -->
+        <outputvec size="4" name="s" from="s0:s1:s2:s3"/>
+
+    </module>
+
+    <module name="8-bit-adder">
+
+        <instance type="4-bit-adder" name="lower"/>
+        <instance type="4-bit-adder" name="upper"/>
+
+        <!-- connect the two 4-bit adders together -->
+        <signal from="lower.cout" to="upper.cin"/>
+
+        <inputvec size="8" name="a" to="lower.a:upper.a"/>
+        <inputvec size="8" name="b" to="lower.b:upper.a"/>
+        <outputvec size="8" name="s" from="lower.s:upper.s"/>
+
+        <input name="cin" to="lower.cin"/>
+        <output name="cout" from="upper.cout"/>
+
+    </module>
+</root>

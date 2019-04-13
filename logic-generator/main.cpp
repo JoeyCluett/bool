@@ -7,7 +7,7 @@
 #include "main.h"
 
 // for debugging purposes
-#define DEBUG
+//#define DEBUG
 
 using namespace std;
 
@@ -302,11 +302,11 @@ void generate_xml_output(LogicConfiguration& lc, string filename) {
 
 ostream& operator<<(ostream& os, LogicConfiguration& lc) {
 
-    os << "\n\nConfig name: " << lc.name << endl;
+    os << "\nConfig name: " << lc.name << endl;
 
-    os << "Gates:\n";
+    os << "  Gates:\n";
     for(auto& a : lc.gates) {
-        os << "    " << a.first << " -> ";
+        os << "    " << a.first << " : ";
         switch(a.second) {
             case 0: os << "AND\n"; break;
             case 1: os << "XOR\n"; break;
@@ -316,17 +316,17 @@ ostream& operator<<(ostream& os, LogicConfiguration& lc) {
         }
     }
 
-    os << "\nSignals:\n";
+    os << "\n  Signals:\n";
     for(auto& a : lc.signals)
         os << "    " << a.first << " -> " << a.second << endl;
 
-    os << "\nOutputs:\n";
+    os << "\n  Outputs:\n";
     for(auto& a : lc.outputs)
         os << "    " << a.first << " <- " << a.second << endl;
 
-    os << "\nInputs:\n";
+    os << "\n  Inputs:\n";
     for(auto& a : lc.inputs) {
-        os << "    " << a.first << " : ";
+        os << "    " << a.first << " -> ";
         for(auto& b : a.second)
             os << b << ' ';
         os << endl;
@@ -364,6 +364,11 @@ void evaluate_logical_equation_infix(vector<string> tl, string target, LogicConf
                 while(op_stack.back() != "(") {
                     output_stack.push_back(op_stack.back());
                     op_stack.pop_back();
+
+                    if(op_stack.size() == 0)
+                        throw runtime_error("When generating RPN equation, "
+                        "malformed expression encountered");
+
                 }
                 op_stack.pop_back();
             }

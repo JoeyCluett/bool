@@ -1,78 +1,73 @@
 <root>
-    <module name="cla-adder">
+    <module name="cla-adder-lookahead-unit">
         <gate type="AND" name="g-0"/>
         <gate type="OR" name="g-1"/>
         <gate type="AND" name="g-10"/>
-        <gate type="AND" name="g-11"/>
+        <gate type="OR" name="g-11"/>
         <gate type="AND" name="g-12"/>
-        <gate type="OR" name="g-13"/>
-        <gate type="OR" name="g-14"/>
+        <gate type="AND" name="g-13"/>
+        <gate type="AND" name="g-14"/>
         <gate type="OR" name="g-15"/>
         <gate type="AND" name="g-16"/>
-        <gate type="AND" name="g-17"/>
+        <gate type="OR" name="g-17"/>
         <gate type="AND" name="g-18"/>
         <gate type="AND" name="g-19"/>
         <gate type="AND" name="g-2"/>
-        <gate type="AND" name="g-20"/>
+        <gate type="OR" name="g-20"/>
         <gate type="AND" name="g-21"/>
         <gate type="AND" name="g-22"/>
         <gate type="AND" name="g-23"/>
-        <gate type="AND" name="g-24"/>
+        <gate type="OR" name="g-24"/>
         <gate type="AND" name="g-25"/>
-        <gate type="OR" name="g-26"/>
-        <gate type="OR" name="g-27"/>
-        <gate type="OR" name="g-28"/>
+        <gate type="AND" name="g-26"/>
+        <gate type="AND" name="g-27"/>
+        <gate type="AND" name="g-28"/>
         <gate type="OR" name="g-29"/>
-        <gate type="AND" name="g-3"/>
+        <gate type="OR" name="g-3"/>
         <gate type="AND" name="g-4"/>
-        <gate type="OR" name="g-5"/>
+        <gate type="AND" name="g-5"/>
         <gate type="OR" name="g-6"/>
         <gate type="AND" name="g-7"/>
-        <gate type="AND" name="g-8"/>
+        <gate type="OR" name="g-8"/>
         <gate type="AND" name="g-9"/>
         <signal from="g-0" to="g-1.A"/>
-        <signal from="g-10" to="g-12.B"/>
-        <signal from="g-11" to="g-12.A"/>
-        <signal from="g-12" to="g-13.A"/>
-        <signal from="g-13" to="g-14.A"/>
+        <signal from="g-10" to="g-11.A"/>
+        <signal from="g-11" to="g-15.B"/>
+        <signal from="g-12" to="g-13.B"/>
+        <signal from="g-13" to="g-14.B"/>
         <signal from="g-14" to="g-15.A"/>
-        <signal from="g-16" to="g-28.B"/>
-        <signal from="g-17" to="g-18.B"/>
-        <signal from="g-18" to="g-27.B"/>
-        <signal from="g-19" to="g-21.B"/>
-        <signal from="g-2" to="g-5.B"/>
-        <signal from="g-20" to="g-21.A"/>
-        <signal from="g-21" to="g-26.B"/>
-        <signal from="g-22" to="g-25.B"/>
-        <signal from="g-23" to="g-24.B"/>
-        <signal from="g-24" to="g-25.A"/>
-        <signal from="g-25" to="g-26.A"/>
-        <signal from="g-26" to="g-27.A"/>
-        <signal from="g-27" to="g-28.A"/>
+        <signal from="g-16" to="g-17.A"/>
+        <signal from="g-17" to="g-20.B"/>
+        <signal from="g-18" to="g-19.B"/>
+        <signal from="g-19" to="g-20.A"/>
+        <signal from="g-2" to="g-3.A"/>
+        <signal from="g-20" to="g-24.B"/>
+        <signal from="g-21" to="g-22.B"/>
+        <signal from="g-22" to="g-23.B"/>
+        <signal from="g-23" to="g-24.A"/>
+        <signal from="g-24" to="g-29.B"/>
+        <signal from="g-25" to="g-26.B"/>
+        <signal from="g-26" to="g-27.B"/>
+        <signal from="g-27" to="g-28.B"/>
         <signal from="g-28" to="g-29.A"/>
-        <signal from="g-3" to="g-4.B"/>
-        <signal from="g-4" to="g-5.A"/>
+        <signal from="g-3" to="g-6.B"/>
+        <signal from="g-4" to="g-5.B"/>
         <signal from="g-5" to="g-6.A"/>
-        <signal from="g-7" to="g-14.B"/>
-        <signal from="g-8" to="g-9.B"/>
-        <signal from="g-9" to="g-13.B"/>
-        <input name="Cin" to="g-0.A:g-4.A:g-11.A:g-24.A"/>
-        <input name="c1" to=""/>
-        <input name="c2" to=""/>
-        <input name="c3" to=""/>
-        <input name="g0" to="g-1.B:g-2.A:g-9.A:g-20.A"/>
-        <input name="g1" to="g-6.B:g-7.A:g-18.A"/>
-        <input name="g2" to="g-15.B:g-16.A"/>
-        <input name="g3" to="g-29.B"/>
-        <input name="p0" to="g-0.B:g-3.A:g-11.B:g-23.A"/>
-        <input name="p1" to="g-2.B:g-3.B:g-8.A:g-10.A:g-20.B:g-23.B"/>
-        <input name="p2" to="g-7.B:g-8.B:g-10.B:g-17.A:g-19.A:g-22.A"/>
-        <input name="p3" to="g-16.B:g-17.B:g-19.B:g-22.B"/>
+        <signal from="g-7" to="g-8.A"/>
+        <signal from="g-8" to="g-11.B"/>
+        <signal from="g-9" to="g-10.B"/>
+        <input name="Cin" to="g-0.A:g-5.A:g-14.A:g-28.A"/>
+        <input name="g0" to="g-1.B:g-2.A:g-10.A:g-23.A"/>
+        <input name="g1" to="g-3.B:g-7.A:g-19.A"/>
+        <input name="g2" to="g-8.B:g-16.A"/>
+        <input name="g3" to="g-17.B"/>
+        <input name="p0" to="g-0.B:g-4.A:g-13.A:g-27.A"/>
+        <input name="p1" to="g-2.B:g-4.B:g-9.A:g-12.A:g-22.A:g-26.A"/>
+        <input name="p2" to="g-7.B:g-9.B:g-12.B:g-18.A:g-21.A:g-25.A"/>
+        <input name="p3" to="g-16.B:g-18.B:g-21.B:g-25.B"/>
         <output name="Cout" from="g-29"/>
         <output name="c1" from="g-1"/>
         <output name="c2" from="g-6"/>
         <output name="c3" from="g-15"/>
     </module>
 </root>
-
-
