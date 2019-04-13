@@ -1,20 +1,27 @@
 <root>
 
     <!-- eval tags tell the build system to generate 
-    a jsim file based on a given .config file -->
-    <eval 
-        filename="half-adder.config" 
-        output="cla-half-adder.xml"/>
-
-    <eval 
-        filename="cla-lookahead-unit.config" 
-        output="cla-lookahead-unit.xml"/>
+    a jsim (XML) file based on a given .config file -->
+    <eval filename="cla-half-adder.config" output="cla-half-adder.xml"/>
+    <eval filename="cla-lookahead-unit.config" output="cla-lookahead-unit.xml"/>
 
     <!-- build system expects only one top-level entity -->
-    <top filename="4-bit-adder.xml"/>
+    <top filename="8-bit-adder.xml"/>
 
     <!-- after preqrequisite files are generated, the 
     top-level entity is passed directly to the jsim 
     compiler. this is done internally -->
 
 </root>
+
+<!-- 
+    JSCTS 
+    
+    Joes
+    Simulator
+    Compiler
+    Tool
+    Suite    
+    
+-->
+
