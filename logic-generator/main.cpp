@@ -7,7 +7,7 @@
 #include "main.h"
 
 // for debugging purposes
-//#define DEBUG
+#define DEBUG
 
 using namespace std;
 
@@ -25,6 +25,9 @@ struct LogicConfiguration {
 
     // set<output_name, gate_source>
     map<string, string> outputs;
+
+    // map<signal_name, pair<from, to>>
+    map<string, pair<string, string>> signal_names; // different because jsim signals dont have names
 };
 
 ostream& operator<<(ostream& os, LogicConfiguration& lc);
@@ -39,6 +42,15 @@ void evaluate_logical_equation_infix(vector<string> tl, string target, LogicConf
 void generate_xml_output(LogicConfiguration& lc, string filename);
 
 vector<string> token_list;
+
+unordered_set<string> keywords{
+    "NAME", 
+    "INPUTSTART",  "INPUTEND", 
+    "OUTPUTSTART", "OUTPUTEND", 
+    "SIGNALSTART", "SIGNALEND",
+    "LOGICSTART",  "LOGICEND",
+    "INFIX", "RPN", "END", "<=", "BIT"
+};
 
 int main(int argc, char* argv[]) {
 
@@ -83,6 +95,7 @@ int main(int argc, char* argv[]) {
     const int state_input_list  = 2;
     const int state_output_list = 3;
     const int state_logic       = 4;
+    const int state_signal      = 5;
     int current_state = state_default;
 
     const int input_state_type = 0;
@@ -99,9 +112,16 @@ int main(int argc, char* argv[]) {
     const int logic_state_body   = 3;
     int current_logic_state = logic_state_type;
 
+    const int signal_state_type = 0;
+    const int signal_state_name = 1;
+    int current_signal_state = signal_state_type;
+
     vector<string> logic_equation;
     string logic_goes_to  = ""; // output that equation targets
     string logic_eqn_type = ""; // either "RPN" or "INFIX"
+
+    // names have to be unique among all parts of the configuration
+    unordered_set<string> global_names;
 
     for(auto& s : token_list) {
         switch(current_state) {
@@ -118,6 +138,8 @@ int main(int argc, char* argv[]) {
                     current_state = state_output_list;
                 else if(s == "LOGICSTART")
                     current_state = state_logic;
+                else if(s == "SIGNALSTART")
+                    current_state = state_signal;
                 else 
                     throw runtime_error("Unknown token: " + s);
                 break;
@@ -176,7 +198,11 @@ int main(int argc, char* argv[]) {
                         cout << "state outout_list.name\n";
                         #endif
 
-                        lc.outputs.insert({s, ""});
+                        if(global_names.find(s) != global_names.end())
+                            throw runtime_error("Name '" + s + "' is already used by a different component");
+                        global_names.insert(s);
+
+                        lc.outputs.insert({ s, "" });
                         current_output_state = output_state_type;
                         break;
                     default:
@@ -242,6 +268,38 @@ int main(int argc, char* argv[]) {
                         break;
                     default:
                         throw runtime_error("In state_logic, unknown nested state");
+                }
+                break;
+            case state_signal:
+                switch(current_signal_state) 
+                {
+                    case signal_state_type:
+                        #ifdef DEBUG
+                        cout << "State signal.type\n";
+                        #endif 
+
+                        if(s == "SIGNALEND")
+                            current_state = state_default;
+                        else if(s == "BIT")
+                            current_signal_state = signal_state_name;
+                        else
+                            throw runtime_error("In state signal.type, unknown indentifier: " + s);
+
+                        break;
+                    case signal_state_name:
+                        #ifdef DEBUG
+                        cout << "State signal.name\n" << flush;
+                        #endif
+
+                        if(global_names.find(s) != global_names.end())
+                            throw runtime_error("Name '" + s + "' is already used by a different component");
+                        global_names.insert(s);
+
+                        lc.signal_names.insert({s,{}});
+                        current_signal_state = signal_state_type;
+                        break;
+                    default:
+                        throw runtime_error("In state_signal, unknown nested state");    
                 }
                 break;
             default:
@@ -344,10 +402,12 @@ void evaluate_logical_equation_infix(vector<string> tl, string target, LogicConf
     const int and_type = 0;
     const int xor_type = 1;
     const int or_type  = 2;
+    const int not_type = 3;
     const map<string, const int> logical_function_map = {
         { "and", and_type }, { "&", and_type }, { "AND", and_type }, { "*", and_type },
         { "or", or_type   }, { "|", or_type  }, { "OR", or_type   }, { "+", or_type },
-        { "xor", xor_type }, { "^", xor_type }, { "XOR", xor_type },
+        { "xor", xor_type }, { "^", xor_type }, { "XOR", xor_type }, 
+        { "!", not_type }, { "not", not_type }
     };
 
     vector<string> output_stack;
@@ -449,8 +509,15 @@ void evaluate_logical_equation_rpn(vector<string> tl, string target, LogicConfig
                 throw std::runtime_error("In logical expression, unable "
                 "to find token in logical function map or configuration input map");
 
-            // we found the input. just push it onto the stack
-            st.push_back(StackEntry({ StackEntryType::input_reference, str }));
+            if(lc.inputs.find(str) != lc.inputs.end())
+                // this is an input
+                st.push_back(StackEntry({ StackEntryType::input_reference, str }));
+            else if(lc.signal_names.find(str) != lc.signal_names.end())
+                // this is a signal defined elsewhere
+                st.push_back(StackEntry({ StackEntryType::signal_reference, str }));
+            else
+                // this nothing. me no know what do with. grrr....throw fit
+                throw runtime_error("Token '" + str + "' does not exist in input or signal map");
         }
         else {
             
@@ -467,6 +534,66 @@ void evaluate_logical_equation_rpn(vector<string> tl, string target, LogicConfig
 
             st.pop_back(); st.pop_back();
 
+            switch(i0.set) {
+                case StackEntryType::gate_reference:
+                    switch(i1.set) {
+                        case StackEntryType::gate_reference:
+                            lc.signals.insert({ i0.str, gate_name + ".A" });
+                            lc.signals.insert({ i1.str, gate_name + ".B" });
+                            break;
+                        case StackEntryType::input_reference:
+                            lc.signals.insert({ i0.str, gate_name + ".A" });
+                            lc.inputs.at(i1.str).push_back(gate_name + ".B");
+                            break;
+                        case StackEntryType::signal_reference:
+                            lc.signals.insert({ i0.str, gate_name + ".A" });
+                            lc.signal_names.at(i1.str).second = gate_name + ".B";
+                            break;
+                        default:
+                            throw runtime_error("Unknown reference type on operand stack");
+                    }
+                    break;
+                case StackEntryType::input_reference:
+                    switch(i1.set) {
+                        case StackEntryType::gate_reference:
+                            lc.inputs.at(i0.str).push_back(gate_name + ".A");
+                            lc.signals.insert({ i1.str, gate_name + ".B" });
+                            break;
+                        case StackEntryType::input_reference:
+                            lc.inputs.at(i0.str).push_back(gate_name + ".A");
+                            lc.inputs.at(i1.str).push_back(gate_name + ".B");
+                            break;
+                        case StackEntryType::signal_reference:
+                            lc.inputs.at(i0.str).push_back(gate_name + ".A");
+                            lc.signal_names.at(i1.str).second = gate_name + ".B";
+                            break;
+                        default:
+                            throw runtime_error("Unknown reference type on operand stack");
+                    }
+                    break;
+                case StackEntryType::signal_reference:
+                    switch(i1.set) {
+                        case StackEntryType::gate_reference:
+                            lc.signal_names.at(i0.str).first = gate_name + ".A";
+                            lc.inputs.at(i1.str).push_back(gate_name + ".B");
+                            break;
+                        case StackEntryType::input_reference:
+                            lc.signal_names.at(i0.str).first = gate_name + ".A";
+                            lc.inputs.at(i1.str).push_back(gate_name + ".B");
+                            break;
+                        case StackEntryType::signal_reference:
+                            lc.signal_names.at(i0.str).first = gate_name + ".A";
+                            lc.signal_names.at(i1.str).second = gate_name + ".B";
+                            break;
+                        default:
+                            throw runtime_error("Unknown reference type on operand stack");
+                    }
+                    break;
+                default:
+                    throw runtime_error("Unknown reference type on operand stack");
+            }
+
+/*
             // four possible ways this could go
             if(i0.set == StackEntryType::gate_reference && i1.set == StackEntryType::gate_reference) {
                 // two gates connected to another gate
@@ -488,6 +615,7 @@ void evaluate_logical_equation_rpn(vector<string> tl, string target, LogicConfig
                 lc.signals.insert({ i0.str, gate_name + ".A" });
                 lc.inputs.at(i1.str).push_back(gate_name + ".B");
             }
+*/
 
             st.push_back({ StackEntryType::gate_reference, gate_name });
         }

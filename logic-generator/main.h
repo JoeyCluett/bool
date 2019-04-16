@@ -5,7 +5,8 @@
 enum class StackEntryType : int {
     none             = 0,
     gate_reference   = 1,
-    input_reference  = 2
+    input_reference  = 2,
+    signal_reference = 3
 };
 
 struct StackEntry {
